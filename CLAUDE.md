@@ -1,1 +1,153 @@
 @AGENTS.md
+
+# WhatsForDinner
+
+## Project Context
+
+A weekly dinner planner that generates a 7-day plan and delivers it over WhatsApp. Portfolio
+project, free tier only, public sign-up over both the portal and WhatsApp.
+
+**App** (`src/app/`): Next.js 16 App Router, TypeScript, Tailwind v4, server components plus
+server actions. Served under `basePath: /projects/whatsfordinner` behind a Vercel multi-zone
+rewrite from the portfolio repo.
+**Domain** (`src/lib/`): plain TypeScript, no framework imports, unit tested.
+**Data**: MongoDB Atlas M0. **Messaging**: Meta WhatsApp Cloud API. **Email**: Gmail SMTP.
+**Cron**: GitHub Actions hourly.
+
+Read `docs/DESIGN.md` for the product design and `docs/PROGRESS.md` for what is built.
+
+## Audience
+
+Full-stack engineer who knows the stack. Do not simplify explanations or code.
+
+## Cost Rules (this project's first filter)
+
+Every design choice is judged on running cost before anything else.
+
+- **The only billable event in the product** is a WhatsApp template sent to a user who opted in
+  and whose 24 hour window is shut. Everything else must stay free.
+- Meta bills the app owner, not the user, so any new send path needs the admin cap and kill
+  switch applied (`store.paidBudget()`, `decideChannel`).
+- A message inside the customer service window is free, and so is a Utility template delivered
+  while that window is open. The window opens when the user messages us and lasts 24 hours from
+  their last message, measured from the inbound message timestamp, not from processing time.
+- Before proposing anything that adds a service, state what it costs and which free-tier limit
+  it lands in. Gmail SMTP is about 500 mails a day, Atlas M0 is 512 MB, Vercel Hobby is 1M
+  function calls a month, GitHub Actions is free on public repos.
+- No AI/LLM calls anywhere in the product. They cost money per request.
+
+## Layout
+
+```
+src/lib/plan/        generator, rules, rng, week/date helpers, WhatsApp formatting
+src/lib/bot/         onboarding state machine, command parser, handler, BotStore port + impls
+src/lib/whatsapp/    Cloud API client, fake, payload builder, webhook parsing, signature, window
+src/lib/delivery/    channel decision, delivery service, hourly schedule
+src/lib/auth/        one-time codes, session cookie
+src/lib/db/          document types, Mongo client, typed collections, indexes
+src/lib/portal/      server-only reads and writes for the pages
+src/app/             pages, server actions, route handlers
+scripts/             setup-db.mts (indexes, promote an admin)
+```
+
+## Code Change Rules
+
+- Modify only what the task needs. Do not rewrite working code.
+- **Keep comments short, one line where possible, and explain the non-obvious why.** No essays.
+  Rationale for a decision belongs in `docs/DESIGN.md` or the commit message, not inline.
+- **Never use the em dash. Anywhere.** Not in code, comments, docs, commit messages, PR bodies
+  or chat. Rewrite with a comma, colon, period, parenthesis or a plain hyphen.
+- Domain logic lives in `src/lib`, never in a page or a server action. An action may check the
+  session, read the form, call one or two lib functions and revalidate. Nothing else.
+- **Every server action checks the session itself.** They are reachable by direct POST, so an
+  action that trusts the page that rendered it is a hole.
+- New external dependencies need a stated cost and a reason nothing existing covers it.
+- Anything that talks to WhatsApp, email or the database goes behind a port with a fake, the way
+  `BotStore`, `WhatsAppClient` and `EmailSender` already do. That is what keeps the bot testable
+  without credentials.
+- Keep `docs/PROGRESS.md` current when a chunk lands, including what was deliberately deferred.
+
+## Tests
+
+- `pnpm test` runs everything. `pnpm test:watch` while working.
+- **Unit tests are `*.test.ts` next to the code** and use the in-memory fakes. Keep them fast and
+  free of I/O.
+- **Integration tests are `*.integration.test.ts`** and run against a real MongoDB through
+  `mongodb-memory-server`. First run downloads a binary, then it is cached. Use these for index
+  behaviour, upserts, TTL fields and anything where the in-memory fake could lie.
+- Test behaviour through the seam a user hits: drive the bot through `handleInbound`, not through
+  private helpers.
+- A fixed clock beats mocking timers. Pass `now` and the message timestamp explicitly.
+- Do not assert on locale-formatted dates from `Intl` without pinning the format. Short month
+  names differ between ICU versions, which is why `shortDate` builds the string by hand.
+
+## WhatsApp Gotchas
+
+- Template parameters cannot contain newlines, tabs or four or more consecutive spaces. Meta
+  rejects the whole send with 132018, so meal names are cleaned in `cleanTemplateVariable`.
+- A template body may not start or end with a variable, and Meta rejects bodies with too many
+  variables for their length.
+- Three buttons maximum, ten list rows, twenty characters per button title.
+- A tapped button arrives with both a reply id and the button's own title as text. Parse the id
+  first, or the title gets read as a typed command.
+- Error codes worth knowing: 131030 recipient not on the test allow list, 131047 window closed,
+  132001 template missing or unapproved, 190 bad token. `src/lib/whatsapp/errors.ts` maps them.
+- Meta retries webhook deliveries, so every inbound message is checked against `seenMessage`.
+- The test number only reaches 5 numbers added by hand in the Meta dashboard.
+
+## Next.js 16
+
+`AGENTS.md` is written by `next dev` and says to read `node_modules/next/dist/docs/` before
+writing framework code. Do that, the APIs have moved.
+
+- `cookies()` and `params` are async.
+- Route and page param types come from generated types. After adding a route, run
+  `npx next typegen` or the build, otherwise `RouteContext<"/login/[code]">` does not typecheck.
+- Route handlers are not cached, but mark anything session-dependent `dynamic = "force-dynamic"`.
+- `runtime = "nodejs"` on any route that touches MongoDB or `node:crypto`.
+
+## Data Model
+
+`users` (one account, email and phone both unique and sparse, `onboarding.step` resumes a
+half-finished sign-up), `meals` (per-user additions and hidden overrides on top of the seeded
+catalog), `mealPlans` (unique on user + weekOf, `status` pending or delivered), `mealHistory`
+(drives repeat avoidance), `deliveries` (free vs paid audit trail), `sessions`, `otpCodes`,
+`linkCodes`, `processedMessages` and `adminSettings`. The last four expire through TTL indexes,
+which is what keeps the free 512 MB from filling with one-time codes.
+
+Accounts are never deleted automatically. An incomplete sign-up is `inactive` with a reason.
+
+## Git Conventions
+
+Author: `Hammad un Noor <hammadunnoorr@gmail.com>`. No co-author trailers.
+Branch names: `hammad-wfd/<short-description>`.
+Commit messages: short and action-oriented, for example `Add swap flow to the bot`. Body
+explains why when it is not obvious. No em dashes.
+
+Stacked branches with git-town, as in the harlyy repos:
+
+```
+git checkout main
+git town append hammad-wfd/<short-description>
+```
+
+Commit as you go rather than batching a whole feature into one commit. Never push to `main`
+directly, the user reviews first.
+
+## Debugging
+
+- Reason from evidence: test output, the delivery log, Meta's error code, the actual document.
+- State the hypothesis and what supports it before changing code.
+- If something is missing, ask one focused question instead of guessing.
+
+## Response Format
+
+- Short. Two to four sentences of explanation unless more is asked for.
+- No preamble before the answer.
+- Report failures plainly, including the output.
+
+## Self-Improvement
+
+Add to this file when a project-specific fact is learned: a Meta constraint, a free-tier limit,
+a convention the user corrected, a gotcha in the stack. Not generic advice. Prefer extending an
+existing section over adding a new one, and never delete existing content without asking.
