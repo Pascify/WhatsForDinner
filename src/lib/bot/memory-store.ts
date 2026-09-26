@@ -1,5 +1,7 @@
-import { checkCode, hashCode, OTP_TTL_MS } from "@/lib/auth/codes";
+import { checkCode, generateLinkCode, hashCode, OTP_TTL_MS } from "@/lib/auth/codes";
+import { SEED_MEALS } from "@/data/seedMeals";
 import { DEFAULT_DELIVERY, type LinkCodePurpose, type OtpPurpose } from "@/lib/db/types";
+import type { History, Meal, Plan } from "@/lib/plan/types";
 import { emptyDraft, type OnboardingDraft } from "./onboarding";
 import type { BotStore, BotUser } from "./store";
 
@@ -9,6 +11,11 @@ export class MemoryBotStore implements BotStore {
   private linkCodes = new Map<string, { userId: string; purpose: LinkCodePurpose }>();
   private otps = new Map<string, { codeHash: string; attempts: number; expiresAt: Date }>();
   private seen = new Set<string>();
+  private plans = new Map<string, Plan>();
+  private history = new Map<string, History>();
+  /** Meals added by a user, on top of the seeded catalog. */
+  private extraMeals = new Map<string, Meal[]>();
+  readonly deleted: string[] = [];
   private nextId = 1;
   /** Set by issueOtp so tests can read the code without an email sender. */
   lastOtp?: string;
@@ -17,6 +24,7 @@ export class MemoryBotStore implements BotStore {
     const created: BotUser = {
       id: user.id ?? `user-${this.nextId++}`,
       status: "inactive",
+      timezone: "Asia/Karachi",
       onboarding: { step: "done", draft: emptyDraft() },
       rules: [],
       delivery: structuredClone(DEFAULT_DELIVERY),
@@ -110,5 +118,49 @@ export class MemoryBotStore implements BotStore {
     if (this.seen.has(messageId)) return true;
     this.seen.add(messageId);
     return false;
+  }
+
+  async mealsFor(userId: string) {
+    return [...SEED_MEALS, ...(this.extraMeals.get(userId) ?? [])].filter((meal) => !meal.hidden);
+  }
+
+  async historyFor(userId: string) {
+    return this.history.get(userId) ?? {};
+  }
+
+  async findPlan(userId: string, weekOf: string) {
+    const plan = this.plans.get(`${userId}:${weekOf}`);
+    return plan ? structuredClone(plan) : undefined;
+  }
+
+  async savePlan(userId: string, plan: Plan) {
+    this.plans.set(`${userId}:${plan.weekOf}`, structuredClone(plan));
+    const history = this.history.get(userId) ?? {};
+    for (const day of plan.days) history[day.mealId] = day.date;
+    this.history.set(userId, history);
+  }
+
+  async setPlanDay(userId: string, weekOf: string, date: string, mealId: string) {
+    const plan = this.plans.get(`${userId}:${weekOf}`);
+    const day = plan?.days.find((entry) => entry.date === date);
+    if (day) day.mealId = mealId;
+
+    const history = this.history.get(userId) ?? {};
+    history[mealId] = date;
+    this.history.set(userId, history);
+  }
+
+  async setPaused(userId: string, paused: boolean) {
+    const user = this.users.get(userId);
+    if (user) user.status = paused ? "inactive" : "active";
+  }
+
+  async deleteUser(userId: string) {
+    this.users.delete(userId);
+    this.deleted.push(userId);
+  }
+
+  async issueLoginLink(userId: string) {
+    return `https://example.test/login/${generateLinkCode()}?u=${userId}`;
   }
 }

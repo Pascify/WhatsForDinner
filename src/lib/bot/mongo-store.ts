@@ -1,8 +1,25 @@
 import { ObjectId } from "mongodb";
-import { checkCode, generateOtp, hashCode, OTP_TTL_MS } from "@/lib/auth/codes";
+import {
+  checkCode,
+  generateLinkCode,
+  generateOtp,
+  hashCode,
+  LINK_CODE_TTL_MS,
+  OTP_TTL_MS,
+} from "@/lib/auth/codes";
+import { SEED_MEALS } from "@/data/seedMeals";
 import { statusFor } from "@/lib/accounts/policy";
-import { linkCodes, otpCodes, processedMessages, users } from "@/lib/db/collections";
+import {
+  linkCodes,
+  mealHistory,
+  mealPlans,
+  meals as mealsCollection,
+  otpCodes,
+  processedMessages,
+  users,
+} from "@/lib/db/collections";
 import { DEFAULT_DELIVERY, type LinkCodePurpose, type OtpPurpose, type UserDoc } from "@/lib/db/types";
+import type { History, Meal, Plan } from "@/lib/plan/types";
 import { emptyDraft, type OnboardingDraft } from "./onboarding";
 import type { BotStore, BotUser } from "./store";
 
@@ -23,6 +40,7 @@ function toBotUser(doc: UserDoc): BotUser {
     rules: doc.rules,
     delivery: doc.delivery,
     lastInboundAt: doc.lastInboundAt,
+    timezone: doc.timezone,
   };
 }
 
@@ -146,6 +164,107 @@ export class MongoBotStore implements BotStore {
       result.ok ? { $set: { consumedAt: new Date() } } : { $inc: { attempts: 1 } },
     );
     return result;
+  }
+
+  async mealsFor(userId: string) {
+    const own = await (await mealsCollection())
+      .find({ ownerId: new ObjectId(userId) })
+      .toArray();
+
+    const hidden = new Set(own.filter((meal) => meal.hidden).map((meal) => meal.id));
+    const seeded = SEED_MEALS.filter((meal) => !hidden.has(meal.id));
+    const added: Meal[] = own
+      .filter((meal) => !meal.hidden)
+      .map(({ id, name, tags }) => ({ id, name, tags }));
+
+    return [...seeded, ...added];
+  }
+
+  async historyFor(userId: string) {
+    const rows = await (await mealHistory())
+      .find({ userId: new ObjectId(userId) })
+      .sort({ servedOn: -1 })
+      .toArray();
+
+    const history: History = {};
+    for (const row of rows) history[row.mealId] ??= row.servedOn;
+    return history;
+  }
+
+  async findPlan(userId: string, weekOf: string) {
+    const doc = await (await mealPlans()).findOne({ userId: new ObjectId(userId), weekOf });
+    if (!doc) return undefined;
+    return { weekOf: doc.weekOf, days: doc.days, relaxations: doc.relaxations, seed: doc.seed };
+  }
+
+  async savePlan(userId: string, plan: Plan) {
+    const id = new ObjectId(userId);
+    await (await mealPlans()).updateOne(
+      { userId: id, weekOf: plan.weekOf },
+      {
+        $set: { days: plan.days, relaxations: plan.relaxations, seed: plan.seed },
+        $setOnInsert: { userId: id, weekOf: plan.weekOf, status: "pending", createdAt: new Date() },
+      },
+      { upsert: true },
+    );
+    await this.recordServed(id, plan.days.map((day) => ({ mealId: day.mealId, servedOn: day.date })));
+  }
+
+  async setPlanDay(userId: string, weekOf: string, date: string, mealId: string) {
+    const id = new ObjectId(userId);
+    await (await mealPlans()).updateOne(
+      { userId: id, weekOf, "days.date": date },
+      { $set: { "days.$.mealId": mealId } },
+    );
+    await this.recordServed(id, [{ mealId, servedOn: date }]);
+  }
+
+  /** History drives repeat avoidance, so it is written whenever a meal lands on a date. */
+  private async recordServed(userId: ObjectId, entries: { mealId: string; servedOn: string }[]) {
+    if (entries.length === 0) return;
+    const collection = await mealHistory();
+    await collection.bulkWrite(
+      entries.map((entry) => ({
+        updateOne: {
+          filter: { userId, mealId: entry.mealId, servedOn: entry.servedOn },
+          update: { $setOnInsert: { _id: new ObjectId(), userId, ...entry } },
+          upsert: true,
+        },
+      })),
+    );
+  }
+
+  async setPaused(userId: string, paused: boolean) {
+    await (await users()).updateOne(
+      { _id: new ObjectId(userId) },
+      paused
+        ? { $set: { status: "inactive", inactiveReason: "paused", updatedAt: new Date() } }
+        : { $set: { status: "active", updatedAt: new Date() }, $unset: { inactiveReason: "" } },
+    );
+  }
+
+  async deleteUser(userId: string) {
+    const id = new ObjectId(userId);
+    await Promise.all([
+      (await users()).deleteOne({ _id: id }),
+      (await mealPlans()).deleteMany({ userId: id }),
+      (await mealHistory()).deleteMany({ userId: id }),
+      (await mealsCollection()).deleteMany({ ownerId: id }),
+    ]);
+  }
+
+  async issueLoginLink(userId: string) {
+    const code = generateLinkCode();
+    await (await linkCodes()).insertOne({
+      _id: new ObjectId(),
+      codeHash: hashCode(code),
+      purpose: "portal_login",
+      userId: new ObjectId(userId),
+      expiresAt: new Date(Date.now() + LINK_CODE_TTL_MS),
+      createdAt: new Date(),
+    });
+    const base = process.env.APP_URL ?? "https://hammad.vercel.app/projects/whatsfordinner";
+    return `${base}/login/${code}`;
   }
 
   async seenMessage(messageId: string) {

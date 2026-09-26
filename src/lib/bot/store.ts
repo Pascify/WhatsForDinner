@@ -1,5 +1,5 @@
 import type { DeliverySettings, LinkCodePurpose, OnboardingStep, OtpPurpose } from "@/lib/db/types";
-import type { Rule } from "@/lib/plan/types";
+import type { History, Meal, Plan, Rule } from "@/lib/plan/types";
 import type { CodeCheck } from "@/lib/auth/codes";
 import type { OnboardingDraft } from "./onboarding";
 
@@ -15,6 +15,8 @@ export type BotUser = {
   rules: Rule[];
   delivery: DeliverySettings;
   lastInboundAt?: Date;
+  /** IANA zone; "today" and the weekly send time are both local to the user. */
+  timezone: string;
 };
 
 /**
@@ -39,4 +41,16 @@ export interface BotStore {
 
   /** True when this webhook message was already handled; Meta retries deliveries. */
   seenMessage(messageId: string): Promise<boolean>;
+
+  /** The seeded catalog plus this user's own meals, minus the ones they hid. */
+  mealsFor(userId: string): Promise<Meal[]>;
+  /** When each meal was last served, which is what keeps weeks from repeating. */
+  historyFor(userId: string): Promise<History>;
+  findPlan(userId: string, weekOf: string): Promise<Plan | undefined>;
+  savePlan(userId: string, plan: Plan): Promise<void>;
+  setPlanDay(userId: string, weekOf: string, date: string, mealId: string): Promise<void>;
+  setPaused(userId: string, paused: boolean): Promise<void>;
+  deleteUser(userId: string): Promise<void>;
+  /** A one-time link that signs the user into the portal. */
+  issueLoginLink(userId: string): Promise<string>;
 }

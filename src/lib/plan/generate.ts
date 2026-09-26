@@ -1,4 +1,4 @@
-import { mulberry32, weightedPick } from "./rng";
+import { hashSeed, mulberry32, weightedPick } from "./rng";
 import type {
   GenerateInput,
   History,
@@ -157,6 +157,54 @@ export function generatePlan(input: GenerateInput): Plan {
   fillMinimums({ days, quotas, quotaCounts, pool, usedIds, dayRules, relaxations, weekOf });
 
   return { weekOf, days, relaxations, seed };
+}
+
+export type AlternativeInput = {
+  meals: Meal[];
+  rules?: Rule[];
+  history?: History;
+  plan: Plan;
+  /** The day being swapped. */
+  date: string;
+  /** Meals already offered for this day and turned down. */
+  rejected?: string[];
+  /** Bumped each time the user asks for another suggestion. */
+  attempt?: number;
+  repeatGapDays?: number;
+};
+
+/**
+ * One replacement meal for a single day, obeying the same rules as the generator: hard rules
+ * hold, the day rule applies if anything fits, and nothing already on the plan comes back.
+ */
+export function suggestAlternative(input: AlternativeInput): Meal | undefined {
+  const {
+    meals,
+    rules = [],
+    history = {},
+    plan,
+    date,
+    rejected = [],
+    attempt = 0,
+    repeatGapDays = DEFAULT_REPEAT_GAP_DAYS,
+  } = input;
+
+  const onPlan = new Set(plan.days.map((day) => day.mealId));
+  const turnedDown = new Set(rejected);
+  const pool = hardPool(meals, rules).filter(
+    (meal) => !onPlan.has(meal.id) && !turnedDown.has(meal.id),
+  );
+  if (pool.length === 0) return undefined;
+
+  const dayRule = byKind(rules, "day").find((rule) => rule.day === weekdayOf(date));
+  const matching = dayRule ? pool.filter((meal) => hasAll(meal, dayRule.tags)) : [];
+  const candidates = matching.length > 0 ? matching : pool;
+
+  const rng = mulberry32(hashSeed(`${plan.seed}:${date}:${attempt}`));
+  const weights = candidates.map(
+    (meal) => recencyWeight(meal, history, date, repeatGapDays) * preferenceWeight(meal, rules),
+  );
+  return weightedPick(candidates, weights, rng) ?? candidates[0];
 }
 
 /** Second pass: swap days until "at least N" quotas are met, where a day is free to change. */

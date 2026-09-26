@@ -4,7 +4,9 @@ import type { EmailSender } from "@/lib/email/types";
 import type { InboundEvent } from "@/lib/whatsapp/inbound";
 import type { WhatsAppClient } from "@/lib/whatsapp/types";
 import { message, type BotMessage } from "./messages";
+import { parseCommand } from "./commands";
 import { advanceOnboarding, startOnboarding, type StepOutcome } from "./onboarding";
+import { runCommand } from "./run-command";
 import type { BotStore, BotUser } from "./store";
 
 export type BotDeps = {
@@ -17,10 +19,6 @@ export type BotDeps = {
 const OTP_SUBJECT = "Your WhatsForDinner code";
 const otpBody = (code: string) =>
   `Your WhatsForDinner code is ${code}.\n\nType it back into the WhatsApp chat. It expires in 10 minutes.\n\nIf you didn't ask for this, you can ignore this email.`;
-
-const HELP = message(
-  "Here's what I can do:\n\n*plan* — this week's dinners\n*today* / *tomorrow* — one day\n*swap* — change a day\n*settings* — how I send plans\n*login* — a link to the website\n*stop* — pause",
-);
 
 /** Sends each reply in order, so buttons always arrive after the text that explains them. */
 async function reply(deps: BotDeps, to: string, messages: BotMessage[]) {
@@ -53,8 +51,9 @@ export async function handleInbound(event: InboundEvent, deps: BotDeps): Promise
     return;
   }
 
-  // Commands land here once the account is set up.
-  await reply(deps, phone, [HELP]);
+  const command = parseCommand(event.text, event.replyId);
+  const replies = await runCommand(command, user, deps.store, now);
+  await reply(deps, phone, replies);
 }
 
 /** Either a portal code they were asked to send, or someone brand new. */
