@@ -10,6 +10,7 @@ import type {
   OtpDoc,
   ProcessedMessageDoc,
   RecipientDoc,
+  SessionDoc,
   UserDoc,
 } from "./types";
 
@@ -28,6 +29,7 @@ export const otpCodes = () => collection<OtpDoc>("otpCodes");
 export const linkCodes = () => collection<LinkCodeDoc>("linkCodes");
 export const processedMessages = () => collection<ProcessedMessageDoc>("processedMessages");
 export const adminSettings = () => collection<AdminSettingsDoc>("adminSettings");
+export const sessions = () => collection<SessionDoc>("sessions");
 
 /**
  * Idempotent; safe to run on every deploy. The `expiresAt` TTL indexes are what keep the
@@ -44,6 +46,7 @@ export async function ensureIndexes(): Promise<void> {
     otpCol,
     linkCol,
     processedCol,
+    sessionsCol,
   ] = await Promise.all([
     users(),
     recipients(),
@@ -54,6 +57,7 @@ export async function ensureIndexes(): Promise<void> {
     otpCodes(),
     linkCodes(),
     processedMessages(),
+    sessions(),
   ]);
 
   await Promise.all([
@@ -85,5 +89,8 @@ export async function ensureIndexes(): Promise<void> {
 
     processedCol.createIndex({ messageId: 1 }, { unique: true }),
     processedCol.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
+
+    sessionsCol.createIndex({ tokenHash: 1 }, { unique: true }),
+    sessionsCol.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
   ]);
 }
