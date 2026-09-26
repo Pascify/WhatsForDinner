@@ -1,4 +1,4 @@
-# WhatsForDinner — Design
+# WhatsForDinner: Design
 
 Weekly dinner planning, delivered over WhatsApp. Portfolio project, free tier only.
 
@@ -63,8 +63,8 @@ Better Auth was the earlier plan, but the WhatsApp side already needed hashed on
 with expiry, attempt limits and resend cooldowns, plus its own `users` shape carrying phone,
 onboarding state and delivery settings. Adding a framework on top would have meant a second
 user table and a mapping layer for the one feature we use. The session layer is a random token
-stored hashed, an httpOnly cookie, and a TTL index — `src/lib/auth/session.ts`.
-Second option: **Log in with WhatsApp** — page shows a code, user sends it, bot asks
+stored hashed, an httpOnly cookie, and a TTL index: `src/lib/auth/session.ts`.
+Second option: **Log in with WhatsApp**: page shows a code, user sends it, bot asks
 "Log in on Chrome · Karachi? [Yes, it's me] [No]" to block QR-jacking.
 
 ---
@@ -83,7 +83,7 @@ Second option: **Log in with WhatsApp** — page shows a code, user sends it, bo
       - that account has another phone → "Switch to this number? [Switch] [Cancel]"
    4. onboarding basics (diet, halal, never-eat, 1-2 day rules)
    5. delivery setting (§5)
-   6. first plan sent — free, window is open
+   6. first plan sent: free, window is open
 
 ### B. Portal first
 1. email → OTP → verified
@@ -94,7 +94,7 @@ Second option: **Log in with WhatsApp** — page shows a code, user sends it, bo
    first plan arrives immediately. Skipping keeps the account active (plans visible on the web);
    a banner + one reminder email follow.
 
-### C. Sharing with family — no account needed
+### C. Sharing with family: no account needed
 - **Share link**: read-only page of the current plan, always current.
 - **Recipient**: sends a join code to the bot once; receives the owner's plan on WhatsApp; can use
   `plan`, `today`, `tomorrow`, `swap`; has no email and no portal access. Window-closed options are
@@ -145,20 +145,20 @@ The plan records why a rule was relaxed and the UI shows it.
 Repeat avoidance: weight down meals served in recent weeks (history), configurable gap.
 
 Rules are edited in the portal builder. WhatsApp onboarding only captures basics (no free-text
-parsing beyond a small keyword vocabulary — NLP would mean a paid LLM).
+parsing beyond a small keyword vocabulary: NLP would mean a paid LLM).
 
 ---
 
 ## 5. Delivery settings (per user, opt-in)
 
 **1. How should we send plans?**
-- `on_request` — nothing unsolicited. Always $0.
-- `auto` — then: `weekly` (e.g. Sat 18:00) / `daily` (tonight's dinner, e.g. 16:00, chosen days) / both.
+- `on_request`: nothing unsolicited. Always $0.
+- `auto`: then: `weekly` (e.g. Sat 18:00) / `daily` (tonight's dinner, e.g. 16:00, chosen days) / both.
 
 **2. If the WhatsApp window is closed at send time:**
-- `wait` — delivered with their next message. Free.
-- `email` — free, always available (email is mandatory). **Default.**
-- `whatsapp` — template. 💰 Paid, requires explicit confirmation; opt-in timestamp + source recorded.
+- `wait`: delivered with their next message. Free.
+- `email`: free, always available (email is mandatory). **Default.**
+- `whatsapp`: template. 💰 Paid, requires explicit confirmation; opt-in timestamp + source recorded.
 
 Default for new users: `auto` · `weekly` · `email`.
 
@@ -192,7 +192,7 @@ promotional tone risks re-categorisation to Marketing.
 - **MongoDB Atlas M0**, cached connection across invocations, `0.0.0.0/0` network access (disclosed).
 - **GitHub Actions hourly cron** → `POST /api/cron/tick` with a shared secret.
   Hourly because users span timezones; Vercel Hobby cron is daily-only. Note: scheduled workflows
-  are disabled after 60 days of repo inactivity — needs a keepalive.
+  are disabled after 60 days of repo inactivity: needs a keepalive.
 - **Webhook** `/api/whatsapp/webhook`: `GET` verify token; `POST` verifies `X-Hub-Signature-256`,
   dedupes by message id, routes: portal code → join code → OTP → onboarding step → pending plan →
   command. Meta calls the project's own `.vercel.app` URL directly, not the portfolio domain.
@@ -207,9 +207,9 @@ promotional tone risks re-categorisation to Marketing.
 
 ## 8. Rollout
 
-- **Phase 1 — test number.** Up to 5 numbers added by hand in Meta's dashboard. Everything works
+- **Phase 1: test number.** Up to 5 numbers added by hand in Meta's dashboard. Everything works
   for those numbers; public WhatsApp sign-up cannot.
-- **Phase 2 — real business number.** Needed to open sign-up. Registration is free; requires a SIM
+- **Phase 2: real business number.** Needed to open sign-up. Registration is free; requires a SIM
   not already on WhatsApp and a display-name review. Unverified businesses are capped at 250
   business-initiated conversations/day, which we barely use.
 

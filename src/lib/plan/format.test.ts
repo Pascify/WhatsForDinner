@@ -48,13 +48,13 @@ describe("formatting", () => {
   it("lays out the week", () => {
     expect(formatPlan(plan, lookup)).toBe(
       "*WhatsForDinner* 🍽️\nWeek of 21 Sep\n\n" +
-        "Mon — Chicken Karahi\n" +
-        "Tue — Masoor Daal\n" +
-        "Wed — Eat Out / Takeaway 📌\n" +
-        "Thu — Chow Mein\n" +
-        "Fri — Chicken Biryani\n" +
-        "Sat — Homemade Beef Burgers\n" +
-        "Sun — Palak Paneer",
+        "Mon: Chicken Karahi\n" +
+        "Tue: Masoor Daal\n" +
+        "Wed: Eat Out / Takeaway 📌\n" +
+        "Thu: Chow Mein\n" +
+        "Fri: Chicken Biryani\n" +
+        "Sat: Homemade Beef Burgers\n" +
+        "Sun: Palak Paneer",
     );
   });
 
