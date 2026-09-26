@@ -15,8 +15,7 @@ export type Meal = {
   id: string;
   name: string;
   tags: Tag[];
-  /** User-added meals belong to one owner; seeded meals have no owner. */
-  ownerId?: string;
+  /** Hidden meals stay in the catalog but are never picked. */
   hidden?: boolean;
 };
 

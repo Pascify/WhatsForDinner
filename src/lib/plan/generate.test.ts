@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { SEED_MEALS } from "@/data/seedMeals";
-import { generatePlan } from "./generate";
+import { generatePlan, suggestAlternative } from "./generate";
 import { hashSeed } from "./rng";
 import type { Meal, Rule } from "./types";
 
@@ -114,5 +114,47 @@ describe("generatePlan", () => {
     expect(() => generatePlan({ meals: SEED_MEALS, weekOf: WEEK, seed, rules })).toThrow(
       /No meals satisfy/,
     );
+  });
+});
+
+describe("suggestAlternative", () => {
+  const plan = generatePlan({ meals: SEED_MEALS, weekOf: WEEK, seed });
+
+  it("offers a meal that is not already on the plan", () => {
+    const onPlan = new Set(plan.days.map((day) => day.mealId));
+    const suggestion = suggestAlternative({ meals: SEED_MEALS, plan, date: "2026-09-23" });
+
+    expect(suggestion).toBeDefined();
+    expect(onPlan.has(suggestion!.id)).toBe(false);
+  });
+
+  it("offers something different each time it is asked again", () => {
+    const first = suggestAlternative({ meals: SEED_MEALS, plan, date: "2026-09-23" })!;
+    const second = suggestAlternative({
+      meals: SEED_MEALS,
+      plan,
+      date: "2026-09-23",
+      rejected: [first.id],
+      attempt: 1,
+    })!;
+
+    expect(second.id).not.toBe(first.id);
+  });
+
+  it("obeys hard rules and the day rule", () => {
+    const rules: Rule[] = [
+      { kind: "never", tags: ["beef"] },
+      { kind: "day", day: 3, tags: ["rice"] }, // Wednesday
+    ];
+    const suggestion = suggestAlternative({ meals: SEED_MEALS, plan, rules, date: "2026-09-23" })!;
+
+    expect(suggestion.tags).not.toContain("beef");
+    expect(suggestion.tags).toContain("rice");
+  });
+
+  it("gives nothing when every meal is used up", () => {
+    const tiny = SEED_MEALS.slice(0, 3);
+    const tinyPlan = generatePlan({ meals: tiny, weekOf: WEEK, seed });
+    expect(suggestAlternative({ meals: tiny, plan: tinyPlan, date: "2026-09-23" })).toBeUndefined();
   });
 });

@@ -18,18 +18,19 @@ Paused 2026-09-23. Design lives in [DESIGN.md](./DESIGN.md); this file is only s
 | Bot handler | `src/lib/bot/handler.ts` — dedupe, resume onboarding, portal link codes, email-OTP verification, "welcome back" merge onto an existing account. **13 tests**, run against in-memory fakes |
 | Stores & senders | `BotStore` port with `MemoryBotStore` (tests) and `MongoBotStore` (real), `EmailSender` with a fake and Gmail SMTP |
 | Webhook route | `src/app/api/whatsapp/webhook/route.ts` — GET verify, POST signed + deduped, per-event error isolation |
+| Commands | `plan`, `today`, `tomorrow`, `swap` (day list → suggestion → ✅/🔄), `settings`, `login`, `stop`/`resume`, `delete` + confirm, help. **17 tests** |
+| Week + formatting | `src/lib/plan/week.ts` (per-user timezone, week start), `format.ts` (WhatsApp text, swap rows, template variables). **9 tests** |
 
-`pnpm test` → 78 passing. `npx eslint src --max-warnings 0` → clean. `pnpm build` → succeeds.
+`pnpm test` → 107 passing. `npx eslint src --max-warnings 0` → clean. `pnpm build` → succeeds.
 
 ## Next, in order
 
-1. **Commands** — `plan`, `today`, `tomorrow`, `swap`, `settings`, `login`, `stop` / `resume`, `delete`.
-2. **Delivery service** — window-aware: free service message, else email, else (opt-in only) template;
+1. **Delivery service** — window-aware: free service message, else email, else (opt-in only) template;
    admin monthly cap and kill switch; every send logged to `deliveries`.
-3. **Cron** `/api/cron/tick` + hourly GitHub Actions workflow, matching each user's timezone.
-4. **Portal** — passwordless email-OTP login (Better Auth), dashboard, meals, rules builder,
+2. **Cron** `/api/cron/tick` + hourly GitHub Actions workflow, matching each user's timezone.
+3. **Portal** — passwordless email-OTP login (Better Auth), dashboard, meals, rules builder,
    delivery settings, household/recipients, admin page.
-5. **Deploy to Vercel**, then point the Meta webhook at the deployed URL.
+4. **Deploy to Vercel**, then point the Meta webhook at the deployed URL.
 
 ### Deferred on purpose
 
@@ -65,5 +66,6 @@ CRON_SECRET=            # shared with the GitHub Actions workflow
 
 ## Open questions
 
-- Week start: Monday or Sunday? (Generator takes any `weekOf`; the UI needs a default.)
+- Week start: Monday or Sunday? Monday is hardcoded as `WEEK_STARTS_ON` in `src/lib/bot/run-command.ts`
+  until the portal offers a choice.
 - Drinks: parked by request, add later.
