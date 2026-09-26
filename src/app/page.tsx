@@ -24,6 +24,9 @@ export default async function DashboardPage() {
   ]);
   const names = new Map(meals.map((meal) => [meal.id, meal.name]));
 
+  // Fetched here rather than inside the card, so the whole page renders in one pass.
+  const connectCode = user.phone ? undefined : await issueConnectCode(user.id);
+
   return (
     <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
       <Nav isAdmin={doc.role === "admin"} />
@@ -64,18 +67,23 @@ export default async function DashboardPage() {
       )}
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2">
-        <WhatsAppCard user={user} />
+        <WhatsAppCard user={user} connectCode={connectCode} />
         <DeliveryCard user={user} />
       </div>
     </main>
   );
 }
 
-async function WhatsAppCard({ user }: { user: ReturnType<typeof toBotUser> }) {
-  if (!user.phone) {
-    const code = await issueConnectCode(user.id);
+function WhatsAppCard({
+  user,
+  connectCode,
+}: {
+  user: ReturnType<typeof toBotUser>;
+  connectCode?: string;
+}) {
+  if (!user.phone && connectCode) {
     const number = process.env.WHATSAPP_DISPLAY_NUMBER ?? "";
-    const link = `https://wa.me/${number}?text=${encodeURIComponent(`Connect ${code}`)}`;
+    const link = `https://wa.me/${number}?text=${encodeURIComponent(`Connect ${connectCode}`)}`;
 
     return (
       <Card>
@@ -84,7 +92,7 @@ async function WhatsAppCard({ user }: { user: ReturnType<typeof toBotUser> }) {
           Send this message and your plans start arriving. It also proves the number is yours.
         </p>
         <a href={link} target="_blank" rel="noreferrer">
-          <Button type="button">Send &ldquo;Connect {code}&rdquo;</Button>
+          <Button type="button">Send &ldquo;Connect {connectCode}&rdquo;</Button>
         </a>
         <p className="mt-2 text-xs text-stone-500">The code works once and lasts 15 minutes.</p>
       </Card>
