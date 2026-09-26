@@ -1,4 +1,4 @@
-import "server-only";
+import { randomBytes } from "node:crypto";
 import { ObjectId } from "mongodb";
 import { SEED_MEALS } from "@/data/seedMeals";
 import { meals as mealsCollection } from "@/lib/db/collections";
@@ -45,16 +45,34 @@ export async function setHidden(userId: string, mealId: string, hidden: boolean)
   );
 }
 
-export async function addMeal(userId: string, name: string, tags: Tag[]): Promise<void> {
-  const id = `${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}-${Date.now()
-    .toString(36)
-    .slice(-4)}`;
+const DUPLICATE_KEY = 11000;
 
-  await (await mealsCollection()).insertOne({
-    _id: new ObjectId(),
-    ownerId: new ObjectId(userId),
-    id,
-    name: name.trim().slice(0, 60),
-    tags,
-  });
+const slugFor = (name: string) =>
+  `${name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 40) || "meal"}-${randomBytes(2).toString("hex")}`;
+
+/** The suffix is random, not time-based: two meals added in the same millisecond must not clash. */
+export async function addMeal(userId: string, name: string, tags: Tag[]): Promise<void> {
+  const collection = await mealsCollection();
+  const ownerId = new ObjectId(userId);
+
+  for (let attempt = 0; attempt < 5; attempt++) {
+    try {
+      await collection.insertOne({
+        _id: new ObjectId(),
+        ownerId,
+        id: slugFor(name),
+        name: name.trim().slice(0, 60),
+        tags,
+      });
+      return;
+    } catch (error) {
+      if ((error as { code?: number }).code !== DUPLICATE_KEY) throw error;
+    }
+  }
+
+  throw new Error("Could not find a free id for that meal");
 }
