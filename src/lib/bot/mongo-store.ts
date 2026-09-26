@@ -304,7 +304,7 @@ export class MongoBotStore implements BotStore {
   /** Paid sends are capped per calendar month; the count resets when the month rolls over. */
   async activeAutoUsers() {
     const docs = await (await users())
-      .find({ status: "active", "delivery.mode": "auto", phone: { $exists: true } })
+      .find({ status: "active", "delivery.mode": "auto", phone: { $type: "string" } })
       .toArray();
     return docs.map(toBotUser);
   }
