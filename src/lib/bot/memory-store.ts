@@ -16,6 +16,9 @@ export class MemoryBotStore implements BotStore {
   /** Meals added by a user, on top of the seeded catalog. */
   private extraMeals = new Map<string, Meal[]>();
   readonly deleted: string[] = [];
+  readonly deliveryLog: { userId: string; channel: string; kind: string; paid: boolean }[] = [];
+  budget = { cap: 50, sentThisMonth: 0, killSwitch: false };
+  private pending = new Set<string>();
   private nextId = 1;
   /** Set by issueOtp so tests can read the code without an email sender. */
   lastOtp?: string;
@@ -135,6 +138,7 @@ export class MemoryBotStore implements BotStore {
 
   async savePlan(userId: string, plan: Plan) {
     this.plans.set(`${userId}:${plan.weekOf}`, structuredClone(plan));
+    this.pending.add(`${userId}:${plan.weekOf}`);
     const history = this.history.get(userId) ?? {};
     for (const day of plan.days) history[day.mealId] = day.date;
     this.history.set(userId, history);
@@ -162,5 +166,37 @@ export class MemoryBotStore implements BotStore {
 
   async issueLoginLink(userId: string) {
     return `https://example.test/login/${generateLinkCode()}?u=${userId}`;
+  }
+
+  async findPendingPlan(userId: string) {
+    const key = [...this.pending].filter((entry) => entry.startsWith(`${userId}:`)).sort().at(-1);
+    return key ? structuredClone(this.plans.get(key)) : undefined;
+  }
+
+  async markPlanDelivered(userId: string, weekOf: string) {
+    this.pending.delete(`${userId}:${weekOf}`);
+  }
+
+  async logDelivery(entry: { userId: string; channel: string; kind: string; paid: boolean }) {
+    this.deliveryLog.push({
+      userId: entry.userId,
+      channel: entry.channel,
+      kind: entry.kind,
+      paid: entry.paid,
+    });
+  }
+
+  async activeAutoUsers() {
+    return [...this.users.values()]
+      .filter((user) => user.status === "active" && user.delivery.mode === "auto")
+      .map((user) => structuredClone(user));
+  }
+
+  async paidBudget() {
+    return { ...this.budget };
+  }
+
+  async recordPaidSend() {
+    this.budget.sentThisMonth += 1;
   }
 }

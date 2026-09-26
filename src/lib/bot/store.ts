@@ -1,4 +1,11 @@
-import type { DeliverySettings, LinkCodePurpose, OnboardingStep, OtpPurpose } from "@/lib/db/types";
+import type {
+  DeliveryDoc,
+  DeliverySettings,
+  LinkCodePurpose,
+  OnboardingStep,
+  OtpPurpose,
+} from "@/lib/db/types";
+import type { PaidBudget } from "@/lib/delivery/decide";
 import type { History, Meal, Plan, Rule } from "@/lib/plan/types";
 import type { CodeCheck } from "@/lib/auth/codes";
 import type { OnboardingDraft } from "./onboarding";
@@ -53,4 +60,14 @@ export interface BotStore {
   deleteUser(userId: string): Promise<void>;
   /** A one-time link that signs the user into the portal. */
   issueLoginLink(userId: string): Promise<string>;
+
+  /** The most recent plan that has not reached the user yet. */
+  findPendingPlan(userId: string): Promise<Plan | undefined>;
+  markPlanDelivered(userId: string, weekOf: string, via: "service" | "template" | "email"): Promise<void>;
+  /** One row per outbound message, so free vs paid stays auditable. */
+  logDelivery(entry: Omit<DeliveryDoc, "_id" | "userId" | "sentAt"> & { userId: string }): Promise<void>;
+  paidBudget(): Promise<PaidBudget>;
+  recordPaidSend(): Promise<void>;
+  /** Active accounts set to automatic delivery; the hourly job filters these by local time. */
+  activeAutoUsers(): Promise<BotUser[]>;
 }
