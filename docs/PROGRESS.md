@@ -28,7 +28,9 @@ Paused 2026-09-23. Design lives in [DESIGN.md](./DESIGN.md); this file is only s
 | Portal logic | `src/lib/portal/forms.ts` (delivery, rules and timezone parsed from untrusted form data). **12 tests** |
 | Integration tests | real MongoDB through `mongodb-memory-server`: indexes, `MongoBotStore`, sessions, portal login, meal catalog, and a full WhatsApp sign-up end to end. **58 tests** |
 
-`pnpm test` runs both suites (210 passing). `pnpm test:unit` and `pnpm test:integration` split them.
+| Component tests | jsdom + Testing Library: UI primitives, nav, login form, dashboard, preferences, meals and admin pages. **50 tests** |
+
+`pnpm test` runs every suite (260 passing). `pnpm test:unit`, `pnpm test:integration` and `pnpm test:dom` split them.
 `npx eslint src --max-warnings 0` is clean and `pnpm build` succeeds.
 
 Two bugs the integration tests found, both fixed here:
