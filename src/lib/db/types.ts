@@ -138,6 +138,15 @@ export type ProcessedMessageDoc = {
   expiresAt: Date;
 };
 
+export type SessionDoc = {
+  _id: ObjectId;
+  /** The cookie value is never stored, only its hash. */
+  tokenHash: string;
+  userId: ObjectId;
+  createdAt: Date;
+  expiresAt: Date;
+};
+
 export type AdminSettingsDoc = {
   _id: "admin";
   paidMonthlyCap: number;
