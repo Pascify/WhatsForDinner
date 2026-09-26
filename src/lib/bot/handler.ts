@@ -5,8 +5,11 @@ import type { InboundEvent } from "@/lib/whatsapp/inbound";
 import type { WhatsAppClient } from "@/lib/whatsapp/types";
 import { message, type BotMessage } from "./messages";
 import { parseCommand } from "./commands";
+import { deliverPending, deliverPlan } from "@/lib/delivery/service";
 import { advanceOnboarding, startOnboarding, type StepOutcome } from "./onboarding";
-import { runCommand } from "./run-command";
+import { ensurePlan, runCommand } from "./run-command";
+import { localDateISO, startOfWeek } from "@/lib/plan/week";
+import { WEEK_STARTS_ON } from "./run-command";
 import type { BotStore, BotUser } from "./store";
 
 export type BotDeps = {
@@ -50,6 +53,9 @@ export async function handleInbound(event: InboundEvent, deps: BotDeps): Promise
     await continueOnboarding(user, event, deps, phone);
     return;
   }
+
+  // They just messaged, so the free window is open: anything waiting goes out now.
+  await deliverPending({ ...user, lastInboundAt: now }, deps, now);
 
   const command = parseCommand(event.text, event.replyId);
   const replies = await runCommand(command, user, deps.store, now);
@@ -119,10 +125,25 @@ async function continueOnboarding(
 
   await reply(deps, phone, result.messages);
 
+  if (result.effects.some((effect) => effect.kind === "finish")) {
+    await sendFirstPlan(user.id, deps, phone);
+  }
+
   // A verified email that already has an account means this phone belongs to that account.
   if (stepBefore === "verify_email" && outcome.emailVerified) {
     await mergeWithExistingAccount(user, deps, phone);
   }
+}
+
+/** The reward for finishing sign-up: this week's plan, free, since the window is open. */
+async function sendFirstPlan(userId: string, deps: BotDeps, phone: string) {
+  const user = await deps.store.findUserByPhone(phone);
+  if (!user || user.id !== userId) return;
+
+  const now = user.lastInboundAt ?? new Date();
+  const weekOf = startOfWeek(localDateISO(now, user.timezone), WEEK_STARTS_ON);
+  const plan = await ensurePlan(deps.store, user, weekOf);
+  await deliverPlan(user, plan, "weekly", deps, now);
 }
 
 /** Checks the typed code when the machine is waiting on one. */
