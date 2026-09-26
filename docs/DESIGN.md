@@ -57,7 +57,13 @@ Proof of ownership:
   prefilled message.
 
 ### Auth
-Passwordless. Email + 6-digit OTP for portal login (Better Auth email-OTP), 30-day sessions.
+Passwordless. Email + 6-digit OTP for portal login, 30-day sessions.
+
+Better Auth was the earlier plan, but the WhatsApp side already needed hashed one-time codes
+with expiry, attempt limits and resend cooldowns, plus its own `users` shape carrying phone,
+onboarding state and delivery settings. Adding a framework on top would have meant a second
+user table and a mapping layer for the one feature we use. The session layer is a random token
+stored hashed, an httpOnly cookie, and a TTL index — `src/lib/auth/session.ts`.
 Second option: **Log in with WhatsApp** — page shows a code, user sends it, bot asks
 "Log in on Chrome · Karachi? [Yes, it's me] [No]" to block QR-jacking.
 

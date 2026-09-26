@@ -1,69 +1,151 @@
-import Image from "next/image";
+import { redirect } from "next/navigation";
+import { regenerateWeek, swapDay } from "@/app/actions/plan";
+import { Badge, Button, Card, PageHeader, QuietButton } from "@/components/ui";
+import { Nav } from "@/components/Nav";
+import { currentUser } from "@/lib/auth/session";
+import { ensurePlan, WEEK_STARTS_ON } from "@/lib/bot/run-command";
+import { issueConnectCode, store, toBotUser } from "@/lib/portal/data";
+import { dayLong, localDateISO, shortDate, startOfWeek } from "@/lib/plan/week";
+import { describeWindow, windowOpen } from "@/lib/whatsapp/window";
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+export default async function DashboardPage() {
+  const doc = await currentUser();
+  if (!doc) redirect("/login");
+
+  const user = toBotUser(doc);
+  const today = localDateISO(new Date(), user.timezone);
+  const weekOf = startOfWeek(today, WEEK_STARTS_ON);
+
+  const [plan, meals] = await Promise.all([
+    ensurePlan(store, user, weekOf),
+    store.mealsFor(user.id),
+  ]);
+  const names = new Map(meals.map((meal) => [meal.id, meal.name]));
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
+      <Nav isAdmin={doc.role === "admin"} />
+
+      <PageHeader
+        title={`Week of ${shortDate(weekOf)}`}
+        action={
+          <form action={regenerateWeek}>
+            <QuietButton type="submit">Regenerate</QuietButton>
+          </form>
+        }
+      />
+
+      <ol className="space-y-2">
+        {plan.days.map((day) => (
+          <li key={day.date}>
+            <Card className="flex items-center justify-between gap-3 py-3">
+              <div>
+                <p className="text-xs uppercase tracking-wide text-stone-500">
+                  {dayLong(day.date)}
+                  {day.date === today && <span className="ml-2 text-emerald-600">today</span>}
+                </p>
+                <p className="font-medium">{names.get(day.mealId) ?? "Something tasty"}</p>
+              </div>
+              <form action={swapDay}>
+                <input type="hidden" name="date" value={day.date} />
+                <QuietButton type="submit">Swap</QuietButton>
+              </form>
+            </Card>
+          </li>
+        ))}
+      </ol>
+
+      {plan.relaxations.length > 0 && (
+        <p className="mt-4 text-sm text-stone-500">
+          {plan.relaxations.map((relaxation) => relaxation.reason).join(". ")}.
+        </p>
+      )}
+
+      <div className="mt-8 grid gap-4 sm:grid-cols-2">
+        <WhatsAppCard user={user} />
+        <DeliveryCard user={user} />
+      </div>
+    </main>
+  );
+}
+
+async function WhatsAppCard({ user }: { user: ReturnType<typeof toBotUser> }) {
+  if (!user.phone) {
+    const code = await issueConnectCode(user.id);
+    const number = process.env.WHATSAPP_DISPLAY_NUMBER ?? "";
+    const link = `https://wa.me/${number}?text=${encodeURIComponent(`Connect ${code}`)}`;
+
+    return (
+      <Card>
+        <h2 className="mb-2 font-medium">Connect WhatsApp</h2>
+        <p className="mb-3 text-sm text-stone-600 dark:text-stone-400">
+          Send this message and your plans start arriving. It also proves the number is yours.
+        </p>
+        <a href={link} target="_blank" rel="noreferrer">
+          <Button type="button">Send &ldquo;Connect {code}&rdquo;</Button>
+        </a>
+        <p className="mt-2 text-xs text-stone-500">The code works once and lasts 15 minutes.</p>
+      </Card>
+    );
+  }
+
+  const open = windowOpen(user.lastInboundAt);
+  return (
+    <Card>
+      <h2 className="mb-2 font-medium">WhatsApp</h2>
+      <p className="text-sm text-stone-600 dark:text-stone-400">
+        Connected as +{user.phone}
+      </p>
+      <p className="mt-3 flex items-center gap-2 text-sm">
+        Free window:{" "}
+        <Badge tone={open ? "green" : "grey"}>{describeWindow(user.lastInboundAt)}</Badge>
+      </p>
+      <p className="mt-2 text-xs text-stone-500">
+        {open
+          ? "Anything we send right now costs nothing."
+          : "Message the bot to open it again, or we fall back to your chosen option."}
+      </p>
+    </Card>
+  );
+}
+
+function DeliveryCard({ user }: { user: ReturnType<typeof toBotUser> }) {
+  const { delivery } = user;
+  const what =
+    delivery.mode === "on_request"
+      ? "Only when you ask"
+      : [delivery.weekly.enabled && "Weekly plan", delivery.daily.enabled && "Daily reminder"]
+          .filter(Boolean)
+          .join(" + ") || "Nothing scheduled";
+
+  const closed = {
+    wait: "Wait for your next message",
+    email: "Email it to you",
+    whatsapp: "Send on WhatsApp anyway (paid)",
+  }[delivery.whenClosed];
+
+  return (
+    <Card>
+      <h2 className="mb-2 font-medium">Delivery</h2>
+      <dl className="space-y-1 text-sm">
+        <div className="flex justify-between gap-3">
+          <dt className="text-stone-500">Sending</dt>
+          <dd>{what}</dd>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+        <div className="flex justify-between gap-3">
+          <dt className="text-stone-500">If WhatsApp is closed</dt>
+          <dd className="text-right">{closed}</dd>
         </div>
-      </main>
-    </div>
+        <div className="flex justify-between gap-3">
+          <dt className="text-stone-500">Region</dt>
+          <dd>{user.timezone}</dd>
+        </div>
+      </dl>
+      <p className="mt-3 text-xs text-stone-500">
+        Change these under Preferences. Only the paid option can ever cost anything.
+      </p>
+    </Card>
   );
 }
