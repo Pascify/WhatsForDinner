@@ -11,8 +11,9 @@
     "test:watch": "vitest",
     "setup-db": "node --experimental-strip-types --env-file=.env.local scripts/setup-db.mts",
     "typecheck": "tsc --noEmit",
-    "test:unit": "vitest run --exclude '**/*.integration.test.ts' --exclude '**/node_modules/**'",
-    "test:integration": "vitest run integration"
+    "test:unit": "vitest run --project node --exclude '**/*.integration.test.ts' --exclude '**/node_modules/**'",
+    "test:integration": "vitest run integration",
+    "test:dom": "vitest run --project dom"
   },
   "dependencies": {
     "mongodb": "^7.6.0",
