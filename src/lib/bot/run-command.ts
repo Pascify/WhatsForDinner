@@ -11,7 +11,7 @@ import type { BotStore, BotUser } from "./store";
 export const WEEK_STARTS_ON: Weekday = 1;
 
 export const HELP = message(
-  "Here's what I can do:\n\n*plan* — this week's dinners\n*today* / *tomorrow* — one day\n*swap* — change a day\n*settings* — how I send plans\n*login* — a link to the website\n*stop* — pause",
+  "Here's what I can do:\n\n*plan*: this week's dinners\n*today* / *tomorrow*: one day\n*swap*: change a day\n*settings*: how I send plans\n*login*: a link to the website\n*stop*: pause",
 );
 
 const planButtons = () => [

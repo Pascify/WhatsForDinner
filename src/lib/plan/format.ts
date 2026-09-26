@@ -8,7 +8,7 @@ export const nameOf = (lookup: MealLookup, mealId: string) => lookup(mealId)?.na
 /** The whole week, as a free-form WhatsApp message. */
 export function formatPlan(plan: Plan, lookup: MealLookup): string {
   const lines = plan.days.map(
-    (day) => `${dayShort(day.date)} — ${nameOf(lookup, day.mealId)}${day.locked ? " 📌" : ""}`,
+    (day) => `${dayShort(day.date)}: ${nameOf(lookup, day.mealId)}${day.locked ? " 📌" : ""}`,
   );
 
   const notes = plan.relaxations.length
