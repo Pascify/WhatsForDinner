@@ -1,11 +1,19 @@
-import "server-only";
 import { ObjectId } from "mongodb";
-import { checkCode, generateOtp, hashCode, OTP_TTL_MS, canResend } from "@/lib/auth/codes";
+import {
+  canResend,
+  checkCode,
+  generateLinkCode,
+  generateOtp,
+  hashCode,
+  LINK_CODE_TTL_MS,
+  OTP_TTL_MS,
+} from "@/lib/auth/codes";
 import { linkCodes, otpCodes, users } from "@/lib/db/collections";
 import { MongoBotStore } from "@/lib/bot/mongo-store";
 import type { BotUser } from "@/lib/bot/store";
 import { DEFAULT_DELIVERY, type UserDoc } from "@/lib/db/types";
 import { emailSenderFromEnv } from "@/lib/email/smtp";
+import type { EmailSender } from "@/lib/email/types";
 
 export const store = new MongoBotStore();
 
@@ -32,7 +40,11 @@ export type LoginRequest = { ok: true } | { ok: false; error: string };
  * Emails a one-time code. The reply never says whether the address has an account, so the
  * form cannot be used to find out who is registered.
  */
-export async function requestLoginCode(rawEmail: string): Promise<LoginRequest> {
+export async function requestLoginCode(
+  rawEmail: string,
+  sender: EmailSender = emailSenderFromEnv(),
+  now = new Date(),
+): Promise<LoginRequest> {
   const email = rawEmail.trim().toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
     return { ok: false, error: "That doesn't look like an email address." };
@@ -40,7 +52,7 @@ export async function requestLoginCode(rawEmail: string): Promise<LoginRequest> 
 
   const collection = await otpCodes();
   const recent = await collection.findOne({ email, purpose: "login" }, { sort: { createdAt: -1 } });
-  if (recent && !canResend(recent.createdAt)) {
+  if (recent && !canResend(recent.createdAt, now)) {
     return { ok: false, error: "Hold on a moment before asking for another code." };
   }
 
@@ -51,11 +63,11 @@ export async function requestLoginCode(rawEmail: string): Promise<LoginRequest> 
     codeHash: hashCode(code),
     purpose: "login",
     attempts: 0,
-    expiresAt: new Date(Date.now() + OTP_TTL_MS),
-    createdAt: new Date(),
+    expiresAt: new Date(now.getTime() + OTP_TTL_MS),
+    createdAt: now,
   });
 
-  await emailSenderFromEnv().send({
+  await sender.send({
     to: email,
     subject: "Your WhatsForDinner code",
     text: `Your code is ${code}. It expires in 10 minutes.\n\nIf you didn't ask for it, you can ignore this email.`,
@@ -137,7 +149,6 @@ export async function consumeLoginLink(code: string): Promise<string | undefined
 
 /** A fresh code the user sends from WhatsApp to connect their number. */
 export async function issueConnectCode(userId: string): Promise<string> {
-  const { generateLinkCode, LINK_CODE_TTL_MS } = await import("@/lib/auth/codes");
   const code = generateLinkCode();
 
   await (await linkCodes()).insertOne({

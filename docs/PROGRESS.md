@@ -25,7 +25,17 @@ Paused 2026-09-23. Design lives in [DESIGN.md](./DESIGN.md); this file is only s
 | Schedule + cron | hourly `runTick` matching each user's own timezone, weekly + daily + next-day paid fallback, `POST /api/cron/tick` behind a shared secret, `.github/workflows/deliver.yml` |
 | Week + formatting | `src/lib/plan/week.ts` (per-user timezone, week start), `format.ts` (WhatsApp text, swap rows, template variables). **9 tests** |
 
-`pnpm test` → 140 passing. `npx eslint src --max-warnings 0` → clean. `pnpm build` → succeeds.
+| Portal logic | `src/lib/portal/forms.ts` (delivery, rules and timezone parsed from untrusted form data). **12 tests** |
+| Integration tests | real MongoDB through `mongodb-memory-server`: indexes, `MongoBotStore`, sessions, portal login, meal catalog, and a full WhatsApp sign-up end to end. **58 tests** |
+
+`pnpm test` runs both suites (210 passing). `pnpm test:unit` and `pnpm test:integration` split them.
+`npx eslint src --max-warnings 0` is clean and `pnpm build` succeeds.
+
+Two bugs the integration tests found, both fixed here:
+- an unset `phone` was stored as `null`, so a second portal sign-up would have collided on the
+  sparse unique index (the Mongo client now runs with `ignoreUndefined`);
+- meal ids took their suffix from `Date.now()`, so two meals added in the same millisecond hit a
+  duplicate key error (the suffix is random now, with a retry).
 
 ## Next, in order
 
@@ -37,6 +47,8 @@ Paused 2026-09-23. Design lives in [DESIGN.md](./DESIGN.md); this file is only s
 
 ### Deferred on purpose
 
+- **Server action wiring** is thin by design: parsing lives in `src/lib/portal/forms.ts` and is
+  unit tested, so the action itself is a session check plus two calls.
 - **Better Auth** was dropped in favour of a small session layer; the reasoning is in DESIGN.md.
 - **Switching a number.** If a verified email already has a different phone, the bot says to change
   it on the website rather than offering a Switch button. Needs a confirm step to do properly.
