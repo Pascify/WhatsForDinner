@@ -1,0 +1,20 @@
+name: Deliver plans
+
+on:
+  schedule:
+    # Every hour at :07. Users pick their own region, so the job checks each user's local
+    # time; :07 avoids the congestion GitHub sees on the hour.
+    - cron: "7 * * * *"
+  workflow_dispatch:
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call the delivery endpoint
+        run: |
+          response=$(curl --silent --show-error --fail-with-body \
+            --max-time 60 \
+            --request POST "${{ secrets.APP_URL }}/api/cron/tick" \
+            --header "Authorization: Bearer ${{ secrets.CRON_SECRET }}")
+          echo "$response"

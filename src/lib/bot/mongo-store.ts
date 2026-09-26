@@ -10,6 +10,8 @@ import {
 import { SEED_MEALS } from "@/data/seedMeals";
 import { statusFor } from "@/lib/accounts/policy";
 import {
+  adminSettings,
+  deliveries,
   linkCodes,
   mealHistory,
   mealPlans,
@@ -18,7 +20,13 @@ import {
   processedMessages,
   users,
 } from "@/lib/db/collections";
-import { DEFAULT_DELIVERY, type LinkCodePurpose, type OtpPurpose, type UserDoc } from "@/lib/db/types";
+import {
+  DEFAULT_DELIVERY,
+  type DeliveryDoc,
+  type LinkCodePurpose,
+  type OtpPurpose,
+  type UserDoc,
+} from "@/lib/db/types";
 import type { History, Meal, Plan } from "@/lib/plan/types";
 import { emptyDraft, type OnboardingDraft } from "./onboarding";
 import type { BotStore, BotUser } from "./store";
@@ -265,6 +273,76 @@ export class MongoBotStore implements BotStore {
     });
     const base = process.env.APP_URL ?? "https://hammad.vercel.app/projects/whatsfordinner";
     return `${base}/login/${code}`;
+  }
+
+  async findPendingPlan(userId: string) {
+    const doc = await (await mealPlans()).findOne(
+      { userId: new ObjectId(userId), status: "pending" },
+      { sort: { weekOf: -1 } },
+    );
+    if (!doc) return undefined;
+    return { weekOf: doc.weekOf, days: doc.days, relaxations: doc.relaxations, seed: doc.seed };
+  }
+
+  async markPlanDelivered(userId: string, weekOf: string, via: "service" | "template" | "email") {
+    await (await mealPlans()).updateOne(
+      { userId: new ObjectId(userId), weekOf },
+      { $set: { status: "delivered", deliveredAt: new Date(), deliveredVia: via } },
+    );
+  }
+
+  async logDelivery(entry: Omit<DeliveryDoc, "_id" | "userId" | "sentAt"> & { userId: string }) {
+    const { userId, ...rest } = entry;
+    await (await deliveries()).insertOne({
+      _id: new ObjectId(),
+      userId: new ObjectId(userId),
+      sentAt: new Date(),
+      ...rest,
+    });
+  }
+
+  /** Paid sends are capped per calendar month; the count resets when the month rolls over. */
+  async activeAutoUsers() {
+    const docs = await (await users())
+      .find({ status: "active", "delivery.mode": "auto", phone: { $exists: true } })
+      .toArray();
+    return docs.map(toBotUser);
+  }
+
+  async paidBudget() {
+    const month = new Date().toISOString().slice(0, 7);
+    const collection = await adminSettings();
+    const doc = await collection.findOne({ _id: "admin" });
+
+    if (!doc) {
+      const fresh = {
+        _id: "admin" as const,
+        paidMonthlyCap: 50,
+        paidKillSwitch: false,
+        countingMonth: month,
+        paidSentThisMonth: 0,
+      };
+      await collection.insertOne(fresh);
+      return { cap: fresh.paidMonthlyCap, sentThisMonth: 0, killSwitch: false };
+    }
+
+    return {
+      cap: doc.paidMonthlyCap,
+      killSwitch: doc.paidKillSwitch,
+      sentThisMonth: doc.countingMonth === month ? doc.paidSentThisMonth : 0,
+    };
+  }
+
+  async recordPaidSend() {
+    const month = new Date().toISOString().slice(0, 7);
+    const collection = await adminSettings();
+    const reset = await collection.updateOne(
+      { _id: "admin", countingMonth: { $ne: month } },
+      { $set: { countingMonth: month, paidSentThisMonth: 1 } },
+    );
+    if (reset.modifiedCount === 0) {
+      await collection.updateOne({ _id: "admin" }, { $inc: { paidSentThisMonth: 1 } });
+    }
   }
 
   async seenMessage(messageId: string) {
