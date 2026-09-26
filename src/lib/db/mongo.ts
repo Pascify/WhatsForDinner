@@ -9,7 +9,9 @@ const globalForMongo = globalThis as unknown as { _mongoClient?: Promise<MongoCl
 function connect(): Promise<MongoClient> {
   const uri = process.env.MONGODB_URI;
   if (!uri) throw new Error("MONGODB_URI is not set");
-  return new MongoClient(uri, { maxPoolSize: 10 }).connect();
+  // ignoreUndefined keeps an unset field out of the document instead of storing null,
+  // which a sparse unique index would otherwise treat as a real value.
+  return new MongoClient(uri, { maxPoolSize: 10, ignoreUndefined: true }).connect();
 }
 
 export function getClient(): Promise<MongoClient> {
