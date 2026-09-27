@@ -151,6 +151,30 @@ git town append hammad-wfd/<short-description>
 Commit as you go rather than batching a whole feature into one commit. Never push to `main`
 directly, the user reviews first.
 
+### Merging a stack
+
+Merge bottom up, and **let GitHub delete each head branch on merge**. That is what makes GitHub
+retarget the children onto `main` automatically. The repository setting is on
+(`delete_branch_on_merge`); if it is ever turned off, a stacked PR merges into its parent branch
+instead of `main` and the work silently does not reach production.
+
+After merging a PR in a stack, check the next one actually points at `main`:
+
+```
+gh pr list --json number,headRefName,baseRefName \
+  --jq '.[] | "#\(.number) \(.headRefName) -> \(.baseRefName)"'
+```
+
+If it still points at the merged branch, retarget it:
+
+```
+gh pr edit <n> --base main
+```
+
+Rewriting a branch that already has an open PR (a rebase, a message fix, a force push) can make
+GitHub close the PR, and a closed PR cannot be reopened once its commits no longer exist. Create
+a replacement PR rather than trying to revive it.
+
 ## Debugging
 
 - Reason from evidence: test output, the delivery log, Meta's error code, the actual document.

@@ -1,6 +1,6 @@
-import { redirect } from "next/navigation";
 import { regenerateWeek, swapDay } from "@/app/actions/plan";
 import { Badge, Button, Card, PageHeader, QuietButton } from "@/components/ui";
+import { Landing } from "@/components/Landing";
 import { Nav } from "@/components/Nav";
 import { currentUser } from "@/lib/auth/session";
 import { ensurePlan, WEEK_STARTS_ON } from "@/lib/bot/run-command";
@@ -12,7 +12,8 @@ export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
   const doc = await currentUser();
-  if (!doc) redirect("/login");
+  // Signed out, this is the front door rather than a redirect to a login form.
+  if (!doc) return <Landing whatsappNumber={process.env.WHATSAPP_DISPLAY_NUMBER} />;
 
   const user = toBotUser(doc);
   const today = localDateISO(new Date(), user.timezone);
