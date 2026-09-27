@@ -17,7 +17,7 @@ review was requested the same day. Nothing in the codebase is known to be broken
 | Domain note    | The bare domain redirects into the base path. `pascify.vercel.app` was taken, hence the doubled name         |
 | Database       | MongoDB Atlas M0, Mumbai. Network access `0.0.0.0/0`, which production needs                                 |
 | Email          | Gmail SMTP as `whatsfordinnersupport@gmail.com`, app password in Vercel                                      |
-| Env vars       | All set in Vercel Production and mirrored in local `.env.local`                                              |
+| Env vars       | All set in Vercel Production and mirrored in `.env.prod` (`.env.local` is for local development)             |
 | Meta webhook   | Callback URL verified, `messages` field subscribed, app subscribed to the WABA                               |
 | Meta account   | **Disabled.** Test number `+1 555-156-2911` reports `status: BANNED`                                         |
 | GitHub secrets | **Not set yet**: `MONGODB_URI`, `APP_URL`, `CRON_SECRET`. The hourly workflow cannot run without them        |
@@ -45,7 +45,7 @@ disabled one tends to be caught by the same enforcement. Then:
 1. Add the test recipient numbers under **To** and verify them.
 2. Assign the new app and new WABA to the `whatsfordinner-bot` system user, generate a token.
 3. Update `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_WABA_ID`,
-   `WHATSAPP_APP_SECRET` and `WHATSAPP_DISPLAY_NUMBER` in Vercel and `.env.local`, redeploy.
+   `WHATSAPP_APP_SECRET` and `WHATSAPP_DISPLAY_NUMBER` in Vercel and `.env.prod`, redeploy.
 4. Set the callback URL and verify token, subscribe to **messages**.
 5. `POST /{WABA_ID}/subscribed_apps` with the token. **The dashboard does not do this**, and
    without it Meta never delivers anything.

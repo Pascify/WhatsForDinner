@@ -36,6 +36,17 @@ export function emailSenderFromEnv(): EmailSender {
   const user = process.env.GMAIL_USER?.trim();
   // Google shows app passwords in four groups; pasted with spaces they fail as bad credentials.
   const pass = process.env.GMAIL_APP_PASSWORD?.replace(/\s+/g, "");
-  if (!user || !pass) throw new Error("GMAIL_USER and GMAIL_APP_PASSWORD must be set");
+  if (!user || !pass) {
+    // Local development runs without Gmail: login codes print in the dev server terminal.
+    if (process.env.NODE_ENV === "development") return new ConsoleEmailSender();
+    throw new Error("GMAIL_USER and GMAIL_APP_PASSWORD must be set");
+  }
   return new SmtpEmailSender(user, pass);
+}
+
+export class ConsoleEmailSender implements EmailSender {
+  async send(email: Email) {
+    console.log(`\n[email to ${email.to}] ${email.subject}\n${email.text}\n`);
+    return { ok: true } as const;
+  }
 }
