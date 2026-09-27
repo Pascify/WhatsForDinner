@@ -76,7 +76,10 @@ describe("onboarding", () => {
   });
 
   it("stays on the code step until the code is right", () => {
-    const start = converse([{ input: { text: "Hammad" } }, { input: { text: "cook@example.com" } }]);
+    const start = converse([
+      { input: { text: "Hammad" } },
+      { input: { text: "cook@example.com" } },
+    ]);
 
     const wrong = advanceOnboarding(start.state, { text: "000000" }, { emailError: "Wrong code." });
     expect(wrong.state.step).toBe("verify_email");
@@ -87,7 +90,10 @@ describe("onboarding", () => {
   });
 
   it("lets someone correct a mistyped email", () => {
-    const start = converse([{ input: { text: "Hammad" } }, { input: { text: "typo@example.com" } }]);
+    const start = converse([
+      { input: { text: "Hammad" } },
+      { input: { text: "typo@example.com" } },
+    ]);
     const changed = advanceOnboarding(start.state, { text: "change" });
 
     expect(changed.state.step).toBe("ask_email");

@@ -19,7 +19,13 @@ export async function catalogFor(userId: string): Promise<CatalogEntry[]> {
 
   const added: CatalogEntry[] = own
     .filter((meal) => !SEED_MEALS.some((seed) => seed.id === meal.id))
-    .map((meal) => ({ id: meal.id, name: meal.name, tags: meal.tags, own: true, hidden: meal.hidden ?? false }));
+    .map((meal) => ({
+      id: meal.id,
+      name: meal.name,
+      tags: meal.tags,
+      own: true,
+      hidden: meal.hidden ?? false,
+    }));
 
   return [...seeded, ...added].sort((a, b) => a.name.localeCompare(b.name));
 }
@@ -29,7 +35,9 @@ export async function setHidden(userId: string, mealId: string, hidden: boolean)
   const ownerId = new ObjectId(userId);
   const seeded = SEED_MEALS.find((meal) => meal.id === mealId);
 
-  await (await mealsCollection()).updateOne(
+  await (
+    await mealsCollection()
+  ).updateOne(
     { ownerId, id: mealId },
     {
       $set: { hidden },
@@ -48,11 +56,13 @@ export async function setHidden(userId: string, mealId: string, hidden: boolean)
 const DUPLICATE_KEY = 11000;
 
 const slugFor = (name: string) =>
-  `${name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 40) || "meal"}-${randomBytes(2).toString("hex")}`;
+  `${
+    name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "")
+      .slice(0, 40) || "meal"
+  }-${randomBytes(2).toString("hex")}`;
 
 /** The suffix is random, not time-based: two meals added in the same millisecond must not clash. */
 export async function addMeal(userId: string, name: string, tags: Tag[]): Promise<void> {

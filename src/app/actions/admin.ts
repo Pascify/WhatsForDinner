@@ -17,7 +17,9 @@ export async function saveBudget(formData: FormData) {
   const cap = Number(formData.get("cap"));
   const killSwitch = formData.get("killSwitch") === "on";
 
-  await (await adminSettings()).updateOne(
+  await (
+    await adminSettings()
+  ).updateOne(
     { _id: "admin" },
     {
       $set: {

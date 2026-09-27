@@ -85,6 +85,7 @@ Meta's `hello_world` template to the number you pass, which proves the allow lis
 ## 8. The end-to-end run
 
 **Sign up over WhatsApp.** Message the test number from an allowed phone.
+
 - The bot asks your name, then your email, then emails a 6-digit code.
 - Type the code back into the chat, then answer the diet, halal, restriction, day rule,
   delivery and fallback questions.

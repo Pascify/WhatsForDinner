@@ -14,10 +14,9 @@ await ensureIndexes();
 console.log("✓ indexes are in place");
 
 if (adminEmail) {
-  const result = await (await users()).updateOne(
-    { email: adminEmail },
-    { $set: { role: "admin", updatedAt: new Date() } },
-  );
+  const result = await (
+    await users()
+  ).updateOne({ email: adminEmail }, { $set: { role: "admin", updatedAt: new Date() } });
   console.log(
     result.matchedCount
       ? `✓ ${adminEmail} is now an admin`

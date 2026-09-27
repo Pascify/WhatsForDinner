@@ -30,7 +30,12 @@ export type DecideInput = {
  * choice, except that paid sends stop at the owner's monthly cap or kill switch and fall back
  * to email, and someone with no email waits instead.
  */
-export function decideChannel({ windowOpen, settings, hasEmail, budget }: DecideInput): ChannelDecision {
+export function decideChannel({
+  windowOpen,
+  settings,
+  hasEmail,
+  budget,
+}: DecideInput): ChannelDecision {
   if (windowOpen) {
     return {
       channel: "whatsapp_service",
@@ -50,7 +55,10 @@ export function decideChannel({ windowOpen, settings, hasEmail, budget }: Decide
       return fallbackFromPaid(hasEmail, "paid sending is switched off");
     }
     if (budget.sentThisMonth >= budget.cap) {
-      return fallbackFromPaid(hasEmail, `the monthly cap of ${budget.cap} paid messages was reached`);
+      return fallbackFromPaid(
+        hasEmail,
+        `the monthly cap of ${budget.cap} paid messages was reached`,
+      );
     }
     return {
       channel: "whatsapp_template",
@@ -59,7 +67,11 @@ export function decideChannel({ windowOpen, settings, hasEmail, budget }: Decide
     };
   }
 
-  return { channel: "wait", paid: false, reason: "WhatsApp was closed, so it waits for their next message" };
+  return {
+    channel: "wait",
+    paid: false,
+    reason: "WhatsApp was closed, so it waits for their next message",
+  };
 }
 
 function fallbackFromPaid(hasEmail: boolean, why: string): ChannelDecision {

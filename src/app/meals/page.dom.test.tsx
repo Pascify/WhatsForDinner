@@ -80,8 +80,12 @@ describe("meals", () => {
 
     await renderPage();
 
-    expect(within(cardFor("Chicken Karahi")).getByRole("button", { name: "Hide" })).toBeInTheDocument();
-    expect(within(cardFor("Chow Mein")).getByRole("button", { name: "Bring back" })).toBeInTheDocument();
+    expect(
+      within(cardFor("Chicken Karahi")).getByRole("button", { name: "Hide" }),
+    ).toBeInTheDocument();
+    expect(
+      within(cardFor("Chow Mein")).getByRole("button", { name: "Bring back" }),
+    ).toBeInTheDocument();
   });
 
   it("submits the opposite of the meal's current state", async () => {

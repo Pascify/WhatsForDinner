@@ -145,6 +145,10 @@ describe("runTick", () => {
     user({ lastInboundAt: SATURDAY_6PM_PKT });
     whatsapp.failNext({ ok: false, error: "Meta rate limit reached.", code: 4, retryable: true });
 
-    expect(await runTick(deps, SATURDAY_6PM_PKT)).toMatchObject({ considered: 2, sent: 1, failed: 1 });
+    expect(await runTick(deps, SATURDAY_6PM_PKT)).toMatchObject({
+      considered: 2,
+      sent: 1,
+      failed: 1,
+    });
   });
 });

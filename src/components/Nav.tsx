@@ -12,7 +12,11 @@ export function Nav({ isAdmin }: { isAdmin?: boolean }) {
     <nav className="mb-8 flex flex-wrap items-center gap-4 border-b border-stone-200 pb-3 text-sm dark:border-stone-800">
       <span className="font-semibold">WhatsForDinner 🍽️</span>
       {LINKS.map((link) => (
-        <Link key={link.href} href={link.href} className="text-stone-600 hover:underline dark:text-stone-400">
+        <Link
+          key={link.href}
+          href={link.href}
+          className="text-stone-600 hover:underline dark:text-stone-400"
+        >
           {link.label}
         </Link>
       ))}

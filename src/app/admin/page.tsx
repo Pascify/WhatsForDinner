@@ -43,8 +43,8 @@ export default async function AdminPage() {
             <span className="text-2xl font-semibold">{paidCount}</span> paid
           </p>
           <p className="mt-2 text-xs text-stone-500">
-            Paid messages are WhatsApp templates sent outside the free window, to users who
-            opted in.
+            Paid messages are WhatsApp templates sent outside the free window, to users who opted
+            in.
           </p>
         </Card>
 
@@ -58,7 +58,9 @@ export default async function AdminPage() {
             {budget.killSwitch ? (
               <Badge tone="amber">off</Badge>
             ) : (
-              <Badge tone="green">on, {budget.sentThisMonth}/{budget.cap} used</Badge>
+              <Badge tone="green">
+                on, {budget.sentThisMonth}/{budget.cap} used
+              </Badge>
             )}
           </p>
         </Card>

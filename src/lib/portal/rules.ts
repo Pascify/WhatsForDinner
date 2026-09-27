@@ -11,11 +11,26 @@ export const RULE_CHOICES: {
   example: string;
   groups: TagGroup[];
 }[] = [
-  { kind: "never", title: "I don't eat…", example: "No beef, no fish", groups: ["protein", "base", "style", "cuisine"] },
+  {
+    kind: "never",
+    title: "I don't eat…",
+    example: "No beef, no fish",
+    groups: ["protein", "base", "style", "cuisine"],
+  },
   // Diet only: "every dinner must be chicken" leaves a handful of meals and a repeating week.
   { kind: "always", title: "Every dinner must be…", example: "Always halal", groups: ["diet"] },
-  { kind: "day", title: "On a certain day…", example: "Daal on Fridays", groups: ["protein", "base", "style", "cuisine", "vibe"] },
-  { kind: "quota", title: "How often…", example: "Chicken at most twice a week", groups: ["protein", "base", "style", "cuisine", "vibe"] },
+  {
+    kind: "day",
+    title: "On a certain day…",
+    example: "Daal on Fridays",
+    groups: ["protein", "base", "style", "cuisine", "vibe"],
+  },
+  {
+    kind: "quota",
+    title: "How often…",
+    example: "Chicken at most twice a week",
+    groups: ["protein", "base", "style", "cuisine", "vibe"],
+  },
 ];
 
 export const GROUP_LABELS: Record<TagGroup, string> = {

@@ -20,8 +20,7 @@ export type Inbound = { text?: string; replyId?: string };
 export type StepOutcome = { emailVerified?: boolean; emailError?: string };
 
 export type Effect =
-  | { kind: "send_email_otp"; email: string }
-  | { kind: "finish"; draft: OnboardingDraft };
+  { kind: "send_email_otp"; email: string } | { kind: "finish"; draft: OnboardingDraft };
 
 export type StepResult = { state: OnboardingState; messages: BotMessage[]; effects: Effect[] };
 
@@ -81,7 +80,9 @@ export function startOnboarding(): StepResult {
 }
 
 const askEmail = () =>
-  message("Nice to meet you! What's your email?\n\nYou'll use it to manage your preferences on the website.");
+  message(
+    "Nice to meet you! What's your email?\n\nYou'll use it to manage your preferences on the website.",
+  );
 
 const askDiet = () =>
   message("Do you eat meat?", {
@@ -165,7 +166,11 @@ export function advanceOnboarding(
     messages,
     effects: [],
   });
-  const goto = (step: OnboardingStep, messages: BotMessage[], effects: Effect[] = []): StepResult => ({
+  const goto = (
+    step: OnboardingStep,
+    messages: BotMessage[],
+    effects: Effect[] = [],
+  ): StepResult => ({
     state: { step, draft },
     messages,
     effects,
@@ -196,7 +201,9 @@ export function advanceOnboarding(
         return stay(message(`Sent again to ${draft.email}.`));
       }
       if (outcome.emailVerified) return goto("ask_diet", [message("✅ Verified."), askDiet()]);
-      return stay(message(outcome.emailError ?? "That code didn't work. Try again, or type *change*."));
+      return stay(
+        message(outcome.emailError ?? "That code didn't work. Try again, or type *change*."),
+      );
     }
 
     case "ask_diet": {
@@ -275,24 +282,29 @@ export function advanceOnboarding(
       apply();
 
       if (draft.delivery.mode === "on_request") {
-        return goto("done", [message("Done! Text *plan* whenever you want this week's dinners.")], [
-          { kind: "finish", draft },
-        ]);
+        return goto(
+          "done",
+          [message("Done! Text *plan* whenever you want this week's dinners.")],
+          [{ kind: "finish", draft }],
+        );
       }
       return goto("ask_fallback", [askFallback()]);
     }
 
     case "ask_fallback": {
       const choice = reply?.replace("closed_", "");
-      if (choice !== "email" && choice !== "wait" && choice !== "whatsapp") return stay(askFallback());
+      if (choice !== "email" && choice !== "wait" && choice !== "whatsapp")
+        return stay(askFallback());
       draft.delivery.whenClosed = choice;
       if (choice === "whatsapp") {
         draft.delivery.paidOptInAt = new Date();
         draft.delivery.paidOptInSource = "whatsapp";
       }
-      return goto("done", [message("All set 🎉 Here's your first plan 👇")], [
-        { kind: "finish", draft },
-      ]);
+      return goto(
+        "done",
+        [message("All set 🎉 Here's your first plan 👇")],
+        [{ kind: "finish", draft }],
+      );
     }
 
     default:

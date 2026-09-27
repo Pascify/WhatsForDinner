@@ -25,7 +25,9 @@ export function weekdayOf(dateISO: string): Weekday {
 }
 
 export function addDays(dateISO: string, days: number): string {
-  return new Date(Date.parse(`${dateISO}T00:00:00Z`) + days * 86_400_000).toISOString().slice(0, 10);
+  return new Date(Date.parse(`${dateISO}T00:00:00Z`) + days * 86_400_000)
+    .toISOString()
+    .slice(0, 10);
 }
 
 /** The Monday (or Sunday) on or before a date, depending on where the user's week starts. */

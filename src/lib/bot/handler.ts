@@ -31,7 +31,9 @@ async function reply(deps: BotDeps, to: string, messages: BotMessage[]) {
   for (const item of messages) {
     const result = await deps.whatsapp.send({ kind: "text", to, ...item });
     if (!result.ok) {
-      throw new Error(`WhatsApp refused the reply${result.code ? ` (${result.code})` : ""}: ${result.error}`);
+      throw new Error(
+        `WhatsApp refused the reply${result.code ? ` (${result.code})` : ""}: ${result.error}`,
+      );
     }
   }
 }
@@ -115,7 +117,11 @@ async function continueOnboarding(
 ) {
   const stepBefore = user.onboarding.step;
   const outcome = await resolveOutcome(user, event, deps);
-  const result = advanceOnboarding(user.onboarding, { text: event.text, replyId: event.replyId }, outcome);
+  const result = advanceOnboarding(
+    user.onboarding,
+    { text: event.text, replyId: event.replyId },
+    outcome,
+  );
 
   await deps.store.saveOnboarding(user.id, result.state);
 
@@ -206,7 +212,9 @@ async function mergeWithExistingAccount(user: BotUser, deps: BotDeps, phone: str
 
   if (existing.onboarding.step === "done") {
     await reply(deps, phone, [
-      message(`Welcome back${existing.name ? `, ${existing.name}` : ""}! Your preferences are all set 👇`),
+      message(
+        `Welcome back${existing.name ? `, ${existing.name}` : ""}! Your preferences are all set 👇`,
+      ),
     ]);
   }
 }

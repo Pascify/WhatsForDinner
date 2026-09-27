@@ -29,7 +29,9 @@ beforeEach(() => {
 
 const renderPage = async () => render(await PreferencesPage());
 const checked = (name: string) =>
-  screen.getAllByRole("radio", { name: new RegExp(name) }).find((input) => (input as HTMLInputElement).checked);
+  screen
+    .getAllByRole("radio", { name: new RegExp(name) })
+    .find((input) => (input as HTMLInputElement).checked);
 
 describe("preferences", () => {
   it("sends a signed-out visitor to the login page", async () => {
@@ -115,7 +117,8 @@ describe("preferences", () => {
     expect(removes).toHaveLength(2);
 
     const positions = removes.map(
-      (button) => button.closest("form")!.querySelector<HTMLInputElement>("input[name=index]")!.value,
+      (button) =>
+        button.closest("form")!.querySelector<HTMLInputElement>("input[name=index]")!.value,
     );
     expect(positions).toEqual(["0", "1"]);
   });

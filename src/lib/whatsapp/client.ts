@@ -42,7 +42,8 @@ export class CloudApiClient implements WhatsAppClient {
     }
 
     const messageId = body.messages?.[0]?.id;
-    if (!messageId) return { ok: false, error: "Meta accepted the send but returned no id", retryable: true };
+    if (!messageId)
+      return { ok: false, error: "Meta accepted the send but returned no id", retryable: true };
     return { ok: true, messageId };
   }
 }

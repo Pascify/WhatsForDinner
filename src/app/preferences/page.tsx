@@ -24,11 +24,12 @@ export default async function PreferencesPage() {
   if (!doc) redirect("/login");
   const user = toBotUser(doc);
 
-  const what = user.delivery.weekly.enabled && user.delivery.daily.enabled
-    ? "both"
-    : user.delivery.daily.enabled
-      ? "daily"
-      : "weekly";
+  const what =
+    user.delivery.weekly.enabled && user.delivery.daily.enabled
+      ? "both"
+      : user.delivery.daily.enabled
+        ? "daily"
+        : "weekly";
 
   return (
     <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
@@ -41,7 +42,12 @@ export default async function PreferencesPage() {
           <fieldset>
             <legend className="mb-1 font-medium">How should we send plans?</legend>
             <label className="mr-4">
-              <input type="radio" name="mode" value="auto" defaultChecked={user.delivery.mode === "auto"} />{" "}
+              <input
+                type="radio"
+                name="mode"
+                value="auto"
+                defaultChecked={user.delivery.mode === "auto"}
+              />{" "}
               Automatically
             </label>
             <label>
@@ -63,7 +69,8 @@ export default async function PreferencesPage() {
               ["both", "Both"],
             ].map(([value, label]) => (
               <label key={value} className="mr-4">
-                <input type="radio" name="what" value={value} defaultChecked={what === value} /> {label}
+                <input type="radio" name="what" value={value} defaultChecked={what === value} />{" "}
+                {label}
               </label>
             ))}
           </fieldset>

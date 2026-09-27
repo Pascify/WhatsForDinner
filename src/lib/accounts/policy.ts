@@ -35,7 +35,8 @@ export type Status = { status: UserDoc["status"]; inactiveReason?: InactiveReaso
 export function statusFor(account: AccountFacts): Status {
   if (account.paused) return { status: "inactive", inactiveReason: "paused" };
   if (!account.emailVerifiedAt) return { status: "inactive", inactiveReason: "email_unverified" };
-  if (!account.onboardingDone) return { status: "inactive", inactiveReason: "onboarding_incomplete" };
+  if (!account.onboardingDone)
+    return { status: "inactive", inactiveReason: "onboarding_incomplete" };
   return { status: "active" };
 }
 

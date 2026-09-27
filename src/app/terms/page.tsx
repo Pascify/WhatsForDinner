@@ -21,8 +21,8 @@ export default function TermsPage() {
           <h2 className="mb-1 font-medium">What it is not</h2>
           <p>
             Not nutritional, medical or dietary advice. Allergies and dietary needs are yours to
-            check. A rule such as halal or vegetarian filters the meal list as tagged, and the
-            tags are only as accurate as whoever entered them.
+            check. A rule such as halal or vegetarian filters the meal list as tagged, and the tags
+            are only as accurate as whoever entered them.
           </p>
         </section>
 
@@ -38,8 +38,8 @@ export default function TermsPage() {
           <h2 className="mb-1 font-medium">No guarantees</h2>
           <p>
             The service runs on free hosting and may be slow, interrupted or withdrawn without
-            notice. Plans may fail to arrive. Nothing here is guaranteed, and there is no
-            liability for a missed dinner.
+            notice. Plans may fail to arrive. Nothing here is guaranteed, and there is no liability
+            for a missed dinner.
           </p>
         </section>
 

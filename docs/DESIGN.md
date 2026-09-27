@@ -12,21 +12,22 @@ Weekly dinner planning, delivered over WhatsApp. Portfolio project, free tier on
 
 Cost is the first filter on every decision.
 
-| Part | Cost | Free limit vs. our use |
-| --- | --- | --- |
-| WhatsApp messages inside the 24h window | Free | Unlimited |
-| WhatsApp delivery status callbacks | Free | A few per message |
-| WhatsApp template (window closed) | **Paid** | Opt-in only, capped by admin |
-| Email (Gmail SMTP, dedicated account) | Free | ~500/day |
-| Vercel Hobby | Free | 1M function calls/month |
-| MongoDB Atlas M0 | Free | 512 MB |
-| GitHub Actions (hourly cron) | Free | Unlimited public / 2,000 min private |
-| Domain | Free | `.vercel.app` |
+| Part                                    | Cost     | Free limit vs. our use               |
+| --------------------------------------- | -------- | ------------------------------------ |
+| WhatsApp messages inside the 24h window | Free     | Unlimited                            |
+| WhatsApp delivery status callbacks      | Free     | A few per message                    |
+| WhatsApp template (window closed)       | **Paid** | Opt-in only, capped by admin         |
+| Email (Gmail SMTP, dedicated account)   | Free     | ~500/day                             |
+| Vercel Hobby                            | Free     | 1M function calls/month              |
+| MongoDB Atlas M0                        | Free     | 512 MB                               |
+| GitHub Actions (hourly cron)            | Free     | Unlimited public / 2,000 min private |
+| Domain                                  | Free     | `.vercel.app`                        |
 
 **The only billable event in the entire product** is a WhatsApp template sent to a user who
 (a) turned on "WhatsApp anyway" and (b) has no open 24h window at send time.
 
 ### Meta pricing rules we rely on
+
 - A **customer service window** opens when a user messages the business and lasts 24 hours from their last message.
 - **Non-template messages** are free and can only be sent inside that window.
 - **Utility templates delivered inside an open window are free** (since 2025-07-01).
@@ -38,18 +39,19 @@ Cost is the first filter on every decision.
 
 **One person = one account.** Email unique, phone unique.
 
-| Field | Notes |
-| --- | --- |
-| `name` | asked on both paths |
-| `email` (verified) | required; verified by 6-digit OTP |
+| Field              | Notes                                                                          |
+| ------------------ | ------------------------------------------------------------------------------ |
+| `name`             | asked on both paths                                                            |
+| `email` (verified) | required; verified by 6-digit OTP                                              |
 | `phone` (verified) | optional on portal; implicit on WhatsApp (sender is authenticated by WhatsApp) |
-| `status` | `active` / `inactive` |
-| `inactiveReason` | `email_unverified` / `onboarding_incomplete` / `paused` |
+| `status`           | `active` / `inactive`                                                          |
+| `inactiveReason`   | `email_unverified` / `onboarding_incomplete` / `paused`                        |
 
 Accounts are **never auto-deleted**. Incomplete sign-ups sit as `inactive` and resume where they
 stopped. `delete` (chat) or the portal wipes an account on request.
 
 Proof of ownership:
+
 - **Email** → 6-digit OTP (10 min, 5 attempts, 60s resend cooldown, stored hashed).
 - **Phone** → the user messaged us from it.
 - **Auto-link (no OTP)** → first WhatsApp message carries a portal-issued code (`Connect WFD-7Q4K`):
@@ -57,6 +59,7 @@ Proof of ownership:
   prefilled message.
 
 ### Auth
+
 Passwordless. Email + 6-digit OTP for portal login, 30-day sessions.
 
 Better Auth was the earlier plan, but the WhatsApp side already needed hashed one-time codes
@@ -72,6 +75,7 @@ Second option: **Log in with WhatsApp**: page shows a code, user sends it, bot a
 ## 3. Flows
 
 ### A. WhatsApp first (any inbound message)
+
 1. **Message contains a portal code** → link phone to that account, continue.
 2. **Number known** → resume: mid-onboarding step / command / "Resume?" if paused.
 3. **Number unknown** →
@@ -86,6 +90,7 @@ Second option: **Log in with WhatsApp**: page shows a code, user sends it, bot a
    6. first plan sent: free, window is open
 
 ### B. Portal first
+
 1. email → OTP → verified
 2. name
 3. preferences + full rule builder
@@ -95,12 +100,14 @@ Second option: **Log in with WhatsApp**: page shows a code, user sends it, bot a
    a banner + one reminder email follow.
 
 ### C. Sharing with family: no account needed
+
 - **Share link**: read-only page of the current plan, always current.
 - **Recipient**: sends a join code to the bot once; receives the owner's plan on WhatsApp; can use
   `plan`, `today`, `tomorrow`, `swap`; has no email and no portal access. Window-closed options are
   Wait or WhatsApp anyway (no email fallback).
 
 ### D. Weekly cycle (per user, in their own timezone)
+
 1. Hourly job finds users whose delivery time has arrived.
 2. Generate the plan (§4).
 3. Deliver per §5.
@@ -108,6 +115,7 @@ Second option: **Log in with WhatsApp**: page shows a code, user sends it, bot a
 5. Served meals feed history → next plan avoids repeats.
 
 ### E. Bot commands (all free, inside the window)
+
 `plan` · `today` · `tomorrow` · `swap` (day list → next-best meal → ✅/🔄) · `settings` ·
 `login` (one-time portal link) · `stop` / `resume` · `delete` · anything else → help.
 Replies carry quick-reply buttons; every tap re-opens the 24h window.
@@ -119,25 +127,27 @@ Replies carry quick-reply buttons; every tap re-opens the 24h window.
 Deterministic: same inputs + same seed → same plan (seed derived from user + week). Testable.
 
 ### Meal tags
-| Group | Examples |
-| --- | --- |
-| Base | rice, roti/naan, pasta, noodles, bread |
+
+| Group   | Examples                                             |
+| ------- | ---------------------------------------------------- |
+| Base    | rice, roti/naan, pasta, noodles, bread               |
 | Protein | chicken, beef, mutton, fish, eggs, daal, paneer, veg |
-| Style | gravy/curry, dry, grilled, fried, BBQ, soup |
-| Diet | halal, vegetarian, vegan, gluten-free |
-| Vibe | healthy, splurge, quick, comfort, eat-out |
-| Cuisine | desi, chinese, italian, middle-eastern, ... |
+| Style   | gravy/curry, dry, grilled, fried, BBQ, soup          |
+| Diet    | halal, vegetarian, vegan, gluten-free                |
+| Vibe    | healthy, splurge, quick, comfort, eat-out            |
+| Cuisine | desi, chinese, italian, middle-eastern, ...          |
 
 Seed catalog: the ~40 dishes from `~/Projects/monthly-food-generator/src/data/seedDishes.ts`,
 re-tagged against the groups above. Users can add their own meals (tag picker) and hide any meal.
 
 ### Rule types
-| Type | Example | Strictness |
-| --- | --- | --- |
-| Always / Never | always halal; never beef | hard, never broken |
-| Day | Friday → rice + chicken; Sunday → splurge | hard unless nothing fits |
-| How often | pasta ≤ 1/week; healthy ≥ 3/week | soft |
-| Prefer | more chicken; less fried | weighting only |
+
+| Type           | Example                                   | Strictness               |
+| -------------- | ----------------------------------------- | ------------------------ |
+| Always / Never | always halal; never beef                  | hard, never broken       |
+| Day            | Friday → rice + chicken; Sunday → splurge | hard unless nothing fits |
+| How often      | pasta ≤ 1/week; healthy ≥ 3/week          | soft                     |
+| Prefer         | more chicken; less fried                  | weighting only           |
 
 Relaxation order when a day has no candidates: Prefer → How often → Day → (never) Always/Never.
 The plan records why a rule was relaxed and the UI shows it.
@@ -152,10 +162,12 @@ parsing beyond a small keyword vocabulary: NLP would mean a paid LLM).
 ## 5. Delivery settings (per user, opt-in)
 
 **1. How should we send plans?**
+
 - `on_request`: nothing unsolicited. Always $0.
 - `auto`: then: `weekly` (e.g. Sat 18:00) / `daily` (tonight's dinner, e.g. 16:00, chosen days) / both.
 
 **2. If the WhatsApp window is closed at send time:**
+
 - `wait`: delivered with their next message. Free.
 - `email`: free, always available (email is mandatory). **Default.**
 - `whatsapp`: template. 💰 Paid, requires explicit confirmation; opt-in timestamp + source recorded.
@@ -165,6 +177,7 @@ Default for new users: `auto` · `weekly` · `email`.
 Daily reminders carry `[👍 Got it] [Swap]`; a tap re-opens the window so the next day is free.
 
 ### Admin (owner only)
+
 - **Monthly paid-message cap** across all users; on reaching it, paid sends degrade to email.
   Test number: 50. Real number: starts at 0.
 - **Kill switch** for all paid sends.
@@ -174,11 +187,11 @@ Daily reminders carry `[👍 Got it] [Swap]`; a tap re-opens the window so the n
 
 ## 6. WhatsApp templates
 
-| Name | Purpose | Body sketch |
-| --- | --- | --- |
-| `whatsfordinner_weekly` | full week (default) | header `WhatsForDinner 🍽️`, body `Here is your dinner plan for the week of {{1}}:` + `Mon: {{2}}` … `Sun: {{8}}`, footer `Your automatic weekly plan`, buttons `Looks good 👍` / `Swap a meal` |
-| `whatsfordinner_daily` | tonight's dinner | `Tonight's dinner: {{1}}` + buttons |
-| `whatsfordinner_ready` | generic nudge / backup | `Your plan for the week of {{1}} is ready` + button `Show my plan` |
+| Name                    | Purpose                | Body sketch                                                                                                                                                                                    |
+| ----------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `whatsfordinner_weekly` | full week (default)    | header `WhatsForDinner 🍽️`, body `Here is your dinner plan for the week of {{1}}:` + `Mon: {{2}}` … `Sun: {{8}}`, footer `Your automatic weekly plan`, buttons `Looks good 👍` / `Swap a meal` |
+| `whatsfordinner_daily`  | tonight's dinner       | `Tonight's dinner: {{1}}` + buttons                                                                                                                                                            |
+| `whatsfordinner_ready`  | generic nudge / backup | `Your plan for the week of {{1}} is ready` + button `Show my plan`                                                                                                                             |
 
 Constraints: parameters cannot contain newlines/tabs/4+ spaces; body may not start or end with a
 variable; too many variables for the body length gets rejected; `example` values are mandatory;
@@ -199,6 +212,7 @@ promotional tone risks re-categorisation to Marketing.
 - **Email**: Gmail SMTP (dedicated account + app password) for OTP, plan delivery, reminders.
 
 ### Collections
+
 `users`, `meals`, `mealPlans` (+`status`, `deliveredVia`, unique index on user+weekOf),
 `mealHistory`, `recipients`, `deliveries` (free/paid log), `settings` (admin), plus TTL collections
 `otpCodes`, `linkCodes`, `processedMessages`, and Better Auth's session tables.

@@ -105,9 +105,7 @@ function WhatsAppCard({
   return (
     <Card>
       <h2 className="mb-2 font-medium">WhatsApp</h2>
-      <p className="text-sm text-stone-600 dark:text-stone-400">
-        Connected as +{user.phone}
-      </p>
+      <p className="text-sm text-stone-600 dark:text-stone-400">Connected as +{user.phone}</p>
       <p className="mt-3 flex items-center gap-2 text-sm">
         Free window:{" "}
         <Badge tone={open ? "green" : "grey"}>{describeWindow(user.lastInboundAt)}</Badge>

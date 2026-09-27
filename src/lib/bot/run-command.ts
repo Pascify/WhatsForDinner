@@ -95,7 +95,8 @@ export async function runCommand(
     case "swap_day":
     case "swap_another": {
       const attempt = command.kind === "swap_another" ? command.attempt : 0;
-      const rejected = command.kind === "swap_another" && command.rejected ? [command.rejected] : [];
+      const rejected =
+        command.kind === "swap_another" && command.rejected ? [command.rejected] : [];
       const planWeek = startOfWeek(command.date, WEEK_STARTS_ON);
       const [plan, meals, history] = await Promise.all([
         ensurePlan(store, user, planWeek),
@@ -120,7 +121,10 @@ export async function runCommand(
         message(`How about *${suggestion.name}* for ${dayLong(command.date)}?`, {
           buttons: [
             { id: REPLY_IDS.swapAccept(command.date, suggestion.id), title: "✅ Use this" },
-            { id: REPLY_IDS.swapAnother(command.date, attempt + 1, suggestion.id), title: "🔄 Another" },
+            {
+              id: REPLY_IDS.swapAnother(command.date, attempt + 1, suggestion.id),
+              title: "🔄 Another",
+            },
           ],
         }),
       ];
@@ -144,7 +148,10 @@ export async function runCommand(
       const what =
         delivery.mode === "on_request"
           ? "only when you ask"
-          : [delivery.weekly.enabled && "the week's plan", delivery.daily.enabled && "a daily reminder"]
+          : [
+              delivery.weekly.enabled && "the week's plan",
+              delivery.daily.enabled && "a daily reminder",
+            ]
               .filter(Boolean)
               .join(" and ");
       const closed = {

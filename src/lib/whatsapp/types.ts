@@ -19,8 +19,7 @@ export type OutboundTemplate = {
 export type OutboundMessage = OutboundText | OutboundTemplate;
 
 export type SendResult =
-  | { ok: true; messageId: string }
-  | { ok: false; error: string; code?: number; retryable: boolean };
+  { ok: true; messageId: string } | { ok: false; error: string; code?: number; retryable: boolean };
 
 export interface WhatsAppClient {
   send(message: OutboundMessage): Promise<SendResult>;

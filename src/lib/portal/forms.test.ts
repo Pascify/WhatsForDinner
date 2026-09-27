@@ -33,7 +33,11 @@ describe("readDeliveryForm", () => {
   });
 
   it("enables both schedules", () => {
-    const delivery = readDeliveryForm(form({ mode: "auto", what: "both", dailyHour: "17" }), current(), NOW);
+    const delivery = readDeliveryForm(
+      form({ mode: "auto", what: "both", dailyHour: "17" }),
+      current(),
+      NOW,
+    );
 
     expect(delivery.weekly.enabled).toBe(true);
     expect(delivery.daily).toMatchObject({ enabled: true, hour: 17 });
@@ -60,13 +64,17 @@ describe("readDeliveryForm", () => {
   });
 
   it("falls back to email when the fallback choice is not one we offer", () => {
-    expect(readDeliveryForm(form({ whenClosed: "carrier-pigeon" }), current(), NOW).whenClosed).toBe(
-      "email",
-    );
+    expect(
+      readDeliveryForm(form({ whenClosed: "carrier-pigeon" }), current(), NOW).whenClosed,
+    ).toBe("email");
   });
 
   it("records consent the first time someone opts into paid messages", () => {
-    const delivery = readDeliveryForm(form({ mode: "auto", whenClosed: "whatsapp" }), current(), NOW);
+    const delivery = readDeliveryForm(
+      form({ mode: "auto", whenClosed: "whatsapp" }),
+      current(),
+      NOW,
+    );
 
     expect(delivery.whenClosed).toBe("whatsapp");
     expect(delivery.paidOptInAt).toEqual(NOW);

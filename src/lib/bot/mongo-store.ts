@@ -85,7 +85,9 @@ export class MongoBotStore implements BotStore {
   }
 
   async saveOnboarding(userId: string, onboarding: BotUser["onboarding"]) {
-    await (await users()).updateOne(
+    await (
+      await users()
+    ).updateOne(
       { _id: new ObjectId(userId) },
       {
         $set: {
@@ -101,7 +103,9 @@ export class MongoBotStore implements BotStore {
     const emailVerifiedAt = new Date();
     const status = statusFor({ id: userId, emailVerifiedAt, onboardingDone: true });
 
-    await (await users()).updateOne(
+    await (
+      await users()
+    ).updateOne(
       { _id: new ObjectId(userId) },
       {
         $set: {
@@ -121,7 +125,9 @@ export class MongoBotStore implements BotStore {
   }
 
   async linkPhone(userId: string, phone: string) {
-    await (await users()).updateOne(
+    await (
+      await users()
+    ).updateOne(
       { _id: new ObjectId(userId) },
       { $set: { phone, phoneVerifiedAt: new Date(), updatedAt: new Date() } },
     );
@@ -133,7 +139,9 @@ export class MongoBotStore implements BotStore {
 
   async consumeLinkCode(code: string) {
     const now = new Date();
-    const claimed = await (await linkCodes()).findOneAndUpdate(
+    const claimed = await (
+      await linkCodes()
+    ).findOneAndUpdate(
       { codeHash: hashCode(code), consumedAt: { $exists: false }, expiresAt: { $gt: now } },
       { $set: { consumedAt: now } },
     );
@@ -146,7 +154,9 @@ export class MongoBotStore implements BotStore {
 
   async issueOtp(email: string, purpose: OtpPurpose) {
     const code = generateOtp();
-    await (await otpCodes()).insertOne({
+    await (
+      await otpCodes()
+    ).insertOne({
       _id: new ObjectId(),
       email: email.toLowerCase(),
       codeHash: hashCode(code),
@@ -175,9 +185,7 @@ export class MongoBotStore implements BotStore {
   }
 
   async mealsFor(userId: string) {
-    const own = await (await mealsCollection())
-      .find({ ownerId: new ObjectId(userId) })
-      .toArray();
+    const own = await (await mealsCollection()).find({ ownerId: new ObjectId(userId) }).toArray();
 
     const hidden = new Set(own.filter((meal) => meal.hidden).map((meal) => meal.id));
     const seeded = SEED_MEALS.filter((meal) => !hidden.has(meal.id));
@@ -189,7 +197,9 @@ export class MongoBotStore implements BotStore {
   }
 
   async historyFor(userId: string) {
-    const rows = await (await mealHistory())
+    const rows = await (
+      await mealHistory()
+    )
       .find({ userId: new ObjectId(userId) })
       .sort({ servedOn: -1 })
       .toArray();
@@ -207,7 +217,9 @@ export class MongoBotStore implements BotStore {
 
   async savePlan(userId: string, plan: Plan) {
     const id = new ObjectId(userId);
-    await (await mealPlans()).updateOne(
+    await (
+      await mealPlans()
+    ).updateOne(
       { userId: id, weekOf: plan.weekOf },
       {
         $set: { days: plan.days, relaxations: plan.relaxations, seed: plan.seed },
@@ -215,15 +227,17 @@ export class MongoBotStore implements BotStore {
       },
       { upsert: true },
     );
-    await this.recordServed(id, plan.days.map((day) => ({ mealId: day.mealId, servedOn: day.date })));
+    await this.recordServed(
+      id,
+      plan.days.map((day) => ({ mealId: day.mealId, servedOn: day.date })),
+    );
   }
 
   async setPlanDay(userId: string, weekOf: string, date: string, mealId: string) {
     const id = new ObjectId(userId);
-    await (await mealPlans()).updateOne(
-      { userId: id, weekOf, "days.date": date },
-      { $set: { "days.$.mealId": mealId } },
-    );
+    await (
+      await mealPlans()
+    ).updateOne({ userId: id, weekOf, "days.date": date }, { $set: { "days.$.mealId": mealId } });
     await this.recordServed(id, [{ mealId, servedOn: date }]);
   }
 
@@ -243,7 +257,9 @@ export class MongoBotStore implements BotStore {
   }
 
   async setPaused(userId: string, paused: boolean) {
-    await (await users()).updateOne(
+    await (
+      await users()
+    ).updateOne(
       { _id: new ObjectId(userId) },
       paused
         ? { $set: { status: "inactive", inactiveReason: "paused", updatedAt: new Date() } }
@@ -263,7 +279,9 @@ export class MongoBotStore implements BotStore {
 
   async issueLoginLink(userId: string) {
     const code = generateLinkCode();
-    await (await linkCodes()).insertOne({
+    await (
+      await linkCodes()
+    ).insertOne({
       _id: new ObjectId(),
       codeHash: hashCode(code),
       purpose: "portal_login",
@@ -276,16 +294,17 @@ export class MongoBotStore implements BotStore {
   }
 
   async findPendingPlan(userId: string) {
-    const doc = await (await mealPlans()).findOne(
-      { userId: new ObjectId(userId), status: "pending" },
-      { sort: { weekOf: -1 } },
-    );
+    const doc = await (
+      await mealPlans()
+    ).findOne({ userId: new ObjectId(userId), status: "pending" }, { sort: { weekOf: -1 } });
     if (!doc) return undefined;
     return { weekOf: doc.weekOf, days: doc.days, relaxations: doc.relaxations, seed: doc.seed };
   }
 
   async markPlanDelivered(userId: string, weekOf: string, via: "service" | "template" | "email") {
-    await (await mealPlans()).updateOne(
+    await (
+      await mealPlans()
+    ).updateOne(
       { userId: new ObjectId(userId), weekOf },
       { $set: { status: "delivered", deliveredAt: new Date(), deliveredVia: via } },
     );
@@ -293,7 +312,9 @@ export class MongoBotStore implements BotStore {
 
   async logDelivery(entry: Omit<DeliveryDoc, "_id" | "userId" | "sentAt"> & { userId: string }) {
     const { userId, ...rest } = entry;
-    await (await deliveries()).insertOne({
+    await (
+      await deliveries()
+    ).insertOne({
       _id: new ObjectId(),
       userId: new ObjectId(userId),
       sentAt: new Date(),
@@ -303,7 +324,9 @@ export class MongoBotStore implements BotStore {
 
   /** Paid sends are capped per calendar month; the count resets when the month rolls over. */
   async activeAutoUsers() {
-    const docs = await (await users())
+    const docs = await (
+      await users()
+    )
       .find({ status: "active", "delivery.mode": "auto", phone: { $type: "string" } })
       .toArray();
     return docs.map(toBotUser);
@@ -347,7 +370,9 @@ export class MongoBotStore implements BotStore {
 
   async seenMessage(messageId: string) {
     try {
-      await (await processedMessages()).insertOne({
+      await (
+        await processedMessages()
+      ).insertOne({
         _id: new ObjectId(),
         messageId,
         expiresAt: new Date(Date.now() + PROCESSED_TTL_MS),

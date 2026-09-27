@@ -15,7 +15,9 @@ export function generateSessionToken(): string {
 export async function createSession(userId: string, now = new Date()): Promise<string> {
   const token = generateSessionToken();
 
-  await (await sessions()).insertOne({
+  await (
+    await sessions()
+  ).insertOne({
     _id: new ObjectId(),
     tokenHash: hashCode(token),
     userId: new ObjectId(userId),
@@ -28,7 +30,9 @@ export async function createSession(userId: string, now = new Date()): Promise<s
 
 /** The account behind a session token, or undefined if it is unknown or expired. */
 export async function userForToken(token: string, now = new Date()): Promise<UserDoc | undefined> {
-  const session = await (await sessions()).findOne({
+  const session = await (
+    await sessions()
+  ).findOne({
     tokenHash: hashCode(token),
     expiresAt: { $gt: now },
   });
