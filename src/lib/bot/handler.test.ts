@@ -186,3 +186,16 @@ describe("handleInbound", () => {
     expect(whatsapp.sent).toHaveLength(0);
   });
 });
+
+describe("when WhatsApp refuses a reply", () => {
+  it("says why, rather than looking like a bot that ignored you", async () => {
+    whatsapp.failNext({
+      ok: false,
+      error: "The access token is invalid or expired.",
+      code: 190,
+      retryable: false,
+    });
+
+    await expect(say("Hi")).rejects.toThrow(/WhatsApp refused the reply \(190\)/);
+  });
+})
