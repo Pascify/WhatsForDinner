@@ -1,6 +1,57 @@
 # Progress: where to pick up
 
-Paused 2026-09-23. Design lives in [DESIGN.md](./DESIGN.md); this file is only status.
+Updated 2026-09-28. Design lives in [DESIGN.md](./DESIGN.md), deployment steps in
+[DEPLOY.md](./DEPLOY.md); this file is only status.
+
+## In one line
+
+The app is built, tested, deployed and wired to Meta. It cannot send a message because **Meta
+permanently disabled the business portfolio and its test WhatsApp account on 2026-09-27**. A
+review was requested the same day. Nothing in the codebase is known to be broken.
+
+## Live setup
+
+| Piece | State |
+| --- | --- |
+| Deployment | `https://pascify-pascify.vercel.app/projects/whatsfordinner` (Vercel project `pascify`, team Pascify, Hobby) |
+| Domain note | The bare domain redirects into the base path. `pascify.vercel.app` was taken, hence the doubled name |
+| Database | MongoDB Atlas M0, Mumbai. Network access `0.0.0.0/0`, which production needs |
+| Email | Gmail SMTP as `whatsfordinnersupport@gmail.com`, app password in Vercel |
+| Env vars | All set in Vercel Production and mirrored in local `.env.local` |
+| Meta webhook | Callback URL verified, `messages` field subscribed, app subscribed to the WABA |
+| Meta account | **Disabled.** Test number `+1 555-156-2911` reports `status: BANNED` |
+| GitHub secrets | **Not set yet**: `MONGODB_URI`, `APP_URL`, `CRON_SECRET`. The hourly workflow cannot run without them |
+
+Run `pnpm doctor` to see all of this in one command: number status, app subscription, and
+whether production can reach the database.
+
+## What has been proven end to end
+
+Against the real deployment and the real database, using a signed webhook delivery
+(`X-Hub-Signature-256`) rather than Meta's own delivery:
+
+- the webhook verifies signatures, dedupes retries and routes correctly;
+- onboarding creates the account and advances its step;
+- outbound sends are accepted by the Cloud API;
+- `POST /api/cron/tick` reaches Atlas and returns a summary.
+
+The only untested link is Meta actually delivering an inbound message, which the ban prevents.
+
+## If the review is refused
+
+Create a **new app under a different business portfolio**, since a portfolio created under a
+disabled one tends to be caught by the same enforcement. Then:
+
+1. Add the test recipient numbers under **To** and verify them.
+2. Assign the new app and new WABA to the `whatsfordinner-bot` system user, generate a token.
+3. Update `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_WABA_ID`,
+   `WHATSAPP_APP_SECRET` and `WHATSAPP_DISPLAY_NUMBER` in Vercel and `.env.local`, redeploy.
+4. Set the callback URL and verify token, subscribe to **messages**.
+5. `POST /{WABA_ID}/subscribed_apps` with the token. **The dashboard does not do this**, and
+   without it Meta never delivers anything.
+6. `pnpm doctor`, then message the number.
+
+Pick a display name that reads as a real service. `What's For Dinner` was declined on review.
 
 ## Done
 
@@ -41,11 +92,12 @@ Two bugs the integration tests found, both fixed here:
 
 ## Next, in order
 
-1. **Deploy to Vercel**, set the environment variables, run `pnpm setup-db`, then point Meta's
-   webhook at `<deployment>/api/whatsapp/webhook` and add the GitHub Actions secrets.
-2. **Recipients**: join codes, a read-only share link, and their own delivery settings.
-3. **Portal tests**: the pages and server actions are typechecked and built but have no
-   automated tests; they need an in-memory MongoDB or a thin port like the bot has.
+1. **Unblock Meta**: wait on the review, or rebuild the app under a fresh portfolio as above.
+2. **Add the GitHub Actions secrets** (`MONGODB_URI`, `APP_URL`, `CRON_SECRET`) so the hourly
+   delivery workflow and the index workflow can run.
+3. **Recipients**: join codes, a read-only share link, and their own delivery settings.
+4. **Interaction tests** stop at the form boundary: pages render and forms are inspected, but
+   server actions are mocked, so submitting end to end in a browser is untested.
 
 ### Deferred on purpose
 
@@ -60,10 +112,23 @@ Two bugs the integration tests found, both fixed here:
 - **Cron double-runs.** An hourly schedule means one attempt per scheduled hour. A manual
   `workflow_dispatch` inside the same hour could send twice; a `lastRunAt` guard would fix it.
 - **GitHub disables scheduled workflows** after 60 days without repo activity. Needs a keepalive.
+- **Delivery of bot replies is fire and forget** beyond the send call: a refused send now throws
+  and is reported, but there is no retry.
+
+## Lessons that cost time
+
+- A **banned number accepts sends** and returns a message id, then delivers nothing. Check
+  `status` on the phone number first, which is what `pnpm doctor` does.
+- **Configuring the webhook is not subscribing.** The app must appear in the WABA's
+  `subscribed_apps`, which only the API sets.
+- Atlas rejects an IP that is not on the access list **at the TLS layer**, so the error reads
+  `tlsv1 alert internal error` rather than anything about permissions.
+- Squash merging a stacked PR makes every branch above it conflict, since squash rewrites
+  history. Use a merge commit for stacks.
 
 ## CI
 
-`ci.yml` runs typecheck, lint, `check:rules`, 260 tests and a build on every pull request, plus
+`ci.yml` runs typecheck, lint, `check:rules`, 262 tests and a build on every pull request, plus
 branch-name and commit-message checks. `indexes.yml` creates the database indexes from main.
 Both need repository secrets: `MONGODB_URI` for indexes, and `APP_URL` plus `CRON_SECRET` for
 the hourly delivery workflow.
