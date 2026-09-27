@@ -1,12 +1,12 @@
 /**
  * Creates the indexes and, optionally, promotes an account to admin.
  *
- *   node --experimental-strip-types --env-file=.env.local scripts/setup-db.mts [admin@email]
+ *   pnpm setup-db [admin@email]
  *
  * Safe to run repeatedly: index creation is idempotent.
  */
-import { ensureIndexes, users } from "../src/lib/db/collections.ts";
-import { getClient } from "../src/lib/db/mongo.ts";
+import { ensureIndexes, users } from "@/lib/db/collections";
+import { getClient } from "@/lib/db/mongo";
 
 const adminEmail = process.argv[2]?.toLowerCase();
 
@@ -21,7 +21,7 @@ if (adminEmail) {
   console.log(
     result.matchedCount
       ? `✓ ${adminEmail} is now an admin`
-      : `! no account for ${adminEmail} yet — log in once, then run this again`,
+      : `! no account for ${adminEmail} yet, log in once, then run this again`,
   );
 }
 

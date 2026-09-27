@@ -1,12 +1,12 @@
 /**
  * Checks everything an end-to-end test needs before you start clicking.
  *
- *   node --experimental-strip-types --env-file=.env.local scripts/preflight.mts [92300xxxxxxx]
+ *   pnpm preflight [92300xxxxxxx]
  *
  * Pass a WhatsApp number to also send Meta's hello_world template to it, which proves the
  * token, the phone number id and the recipient allow list all work.
  */
-import { getClient } from "../src/lib/db/mongo.ts";
+import { getClient } from "@/lib/db/mongo";
 
 const REQUIRED = [
   "MONGODB_URI",

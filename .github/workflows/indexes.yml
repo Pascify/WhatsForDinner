@@ -1,0 +1,38 @@
+name: Database indexes
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/lib/db/**"
+      - "scripts/setup-db.mts"
+      - ".github/workflows/indexes.yml"
+  workflow_dispatch:
+
+# Index creation is idempotent, but two runs at once would still be wasted work.
+concurrency:
+  group: indexes
+  cancel-in-progress: false
+
+jobs:
+  ensure:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Create or update the indexes
+        run: pnpm setup-db
+        env:
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          MONGODB_DB: ${{ vars.MONGODB_DB || 'whatsfordinner' }}

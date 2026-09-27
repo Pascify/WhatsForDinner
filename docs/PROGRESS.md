@@ -61,6 +61,13 @@ Two bugs the integration tests found, both fixed here:
   `workflow_dispatch` inside the same hour could send twice; a `lastRunAt` guard would fix it.
 - **GitHub disables scheduled workflows** after 60 days without repo activity. Needs a keepalive.
 
+## CI
+
+`ci.yml` runs typecheck, lint, `check:rules`, 260 tests and a build on every pull request, plus
+branch-name and commit-message checks. `indexes.yml` creates the database indexes from main.
+Both need repository secrets: `MONGODB_URI` for indexes, and `APP_URL` plus `CRON_SECRET` for
+the hourly delivery workflow.
+
 ## Waiting on you
 
 - **Meta:** create the app, test number, add + verify recipient numbers, generate the
