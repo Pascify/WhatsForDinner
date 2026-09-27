@@ -20,6 +20,15 @@ export default async function LoginPage() {
       <p className="mt-4 text-center text-xs text-stone-500">
         No account? Message the WhatsForDinner number on WhatsApp and it will set you up.
       </p>
+      <p className="mt-6 text-center text-xs text-stone-500">
+        <a href="/projects/whatsfordinner/privacy" className="hover:underline">
+          Privacy
+        </a>
+        <span className="mx-2">·</span>
+        <a href="/projects/whatsfordinner/terms" className="hover:underline">
+          Terms
+        </a>
+      </p>
     </main>
   );
 }
