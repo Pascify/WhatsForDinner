@@ -22,7 +22,14 @@ function authorised(request: Request): boolean {
 export async function POST(request: Request) {
   if (!authorised(request)) return new Response("Unauthorized", { status: 401 });
 
-  const summary = await runTick(botDepsFromEnv());
-  console.log("cron tick", summary);
-  return Response.json(summary);
+  try {
+    const summary = await runTick(botDepsFromEnv());
+    console.log("cron tick", summary);
+    return Response.json(summary);
+  } catch (error) {
+    // Behind the shared secret, so the reason can be reported rather than hidden in the logs.
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("cron tick failed", error);
+    return Response.json({ error: message }, { status: 500 });
+  }
 }

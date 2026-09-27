@@ -33,14 +33,18 @@ export async function POST(request: Request) {
   }
 
   const deps = botDepsFromEnv();
+  const failures: string[] = [];
+
   for (const event of events) {
     try {
       await handleInbound(event, deps);
     } catch (error) {
       // One bad event must not make Meta retry the whole delivery, which would repeat the rest.
       console.error("whatsapp webhook: failed to handle event", event.messageId, error);
+      failures.push(error instanceof Error ? error.message : String(error));
     }
   }
 
-  return new Response("ok");
+  // Meta ignores the body; this is for a human running the simulator against production.
+  return Response.json({ handled: events.length, failures });
 }
