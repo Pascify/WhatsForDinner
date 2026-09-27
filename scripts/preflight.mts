@@ -7,6 +7,7 @@
  * token, the phone number id and the recipient allow list all work.
  */
 import { getClient } from "@/lib/db/mongo";
+import { emailSenderFromEnv } from "@/lib/email/smtp";
 
 const REQUIRED = [
   "MONGODB_URI",
@@ -45,6 +46,17 @@ if (!failed) {
   } catch (error) {
     bad(`could not connect: ${(error as Error).message}`);
   }
+
+  console.log("\nEmail");
+  const to = process.env.GMAIL_USER!;
+  const sent = await emailSenderFromEnv().send({
+    to,
+    subject: "WhatsForDinner preflight",
+    text: "If you are reading this, one-time codes will reach your users.",
+  });
+
+  if (sent.ok) ok(`test mail sent to ${to}, check the inbox`);
+  else bad(`Gmail rejected the send: ${sent.error}`);
 
   console.log("\nWhatsApp");
   const version = process.env.WHATSAPP_GRAPH_VERSION ?? "v23.0";
