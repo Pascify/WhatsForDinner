@@ -33,8 +33,9 @@ export class SmtpEmailSender implements EmailSender {
 }
 
 export function emailSenderFromEnv(): EmailSender {
-  const user = process.env.GMAIL_USER;
-  const pass = process.env.GMAIL_APP_PASSWORD;
+  const user = process.env.GMAIL_USER?.trim();
+  // Google shows app passwords in four groups; pasted with spaces they fail as bad credentials.
+  const pass = process.env.GMAIL_APP_PASSWORD?.replace(/\s+/g, "");
   if (!user || !pass) throw new Error("GMAIL_USER and GMAIL_APP_PASSWORD must be set");
   return new SmtpEmailSender(user, pass);
 }

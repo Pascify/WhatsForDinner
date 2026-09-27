@@ -56,11 +56,32 @@ afterEach(() => {
 const renderPage = async () => render(await DashboardPage());
 
 describe("dashboard", () => {
-  it("sends a signed-out visitor to the login page", async () => {
+  it("shows the landing page to a signed-out visitor", async () => {
     currentUser.mockResolvedValue(undefined);
+    process.env.WHATSAPP_DISPLAY_NUMBER = "15551562911";
 
-    await expect(renderPage()).rejects.toThrow("REDIRECT");
-    expect(redirect).toHaveBeenCalledWith("/login");
+    await renderPage();
+
+    expect(screen.getByRole("heading", { name: /WhatsForDinner/ })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Start on WhatsApp" })).toHaveAttribute(
+      "href",
+      expect.stringContaining("wa.me/15551562911"),
+    );
+    expect(screen.getByRole("link", { name: "Sign in with email" })).toHaveAttribute(
+      "href",
+      "/login",
+    );
+    expect(redirect).not.toHaveBeenCalled();
+  });
+
+  it("still offers email sign-in when no WhatsApp number is configured", async () => {
+    currentUser.mockResolvedValue(undefined);
+    delete process.env.WHATSAPP_DISPLAY_NUMBER;
+
+    await renderPage();
+
+    expect(screen.queryByRole("link", { name: "Start on WhatsApp" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Sign in with email" })).toBeInTheDocument();
   });
 
   it("shows the week with a meal on every day", async () => {
