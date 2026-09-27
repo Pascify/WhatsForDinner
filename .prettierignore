@@ -1,0 +1,7 @@
+.next
+coverage
+node_modules
+pnpm-lock.yaml
+next-env.d.ts
+# Rewritten by `next dev`.
+AGENTS.md
