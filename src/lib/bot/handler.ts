@@ -23,10 +23,16 @@ const OTP_SUBJECT = "Your WhatsForDinner code";
 const otpBody = (code: string) =>
   `Your WhatsForDinner code is ${code}.\n\nType it back into the WhatsApp chat. It expires in 10 minutes.\n\nIf you didn't ask for this, you can ignore this email.`;
 
-/** Sends each reply in order, so buttons always arrive after the text that explains them. */
+/**
+ * Sends each reply in order, so buttons always arrive after the text that explains them.
+ * A failed send throws: silently dropping it makes a broken token look like a silent bot.
+ */
 async function reply(deps: BotDeps, to: string, messages: BotMessage[]) {
   for (const item of messages) {
-    await deps.whatsapp.send({ kind: "text", to, ...item });
+    const result = await deps.whatsapp.send({ kind: "text", to, ...item });
+    if (!result.ok) {
+      throw new Error(`WhatsApp refused the reply${result.code ? ` (${result.code})` : ""}: ${result.error}`);
+    }
   }
 }
 
