@@ -67,6 +67,23 @@ scripts/             setup-db.mts (indexes, promote an admin)
   without credentials.
 - Keep `docs/PROGRESS.md` current when a chunk lands, including what was deliberately deferred.
 
+## CI
+
+Three workflows, all free on this repo:
+
+- **CI** (`ci.yml`) on every pull request and push to main: `typecheck`, `lint`, `check:rules`,
+  the whole test suite and a production build. On pull requests it also checks the branch name
+  and that no commit carries a co-author trailer or an em dash.
+- **Database indexes** (`indexes.yml`) on a push to main that touches `src/lib/db/**` or the
+  setup script, and on demand. Runs `pnpm setup-db` against production with the `MONGODB_URI`
+  repository secret. Index creation is idempotent, so re-running is safe.
+- **Deliver plans** (`deliver.yml`) hourly, the cron that sends plans.
+
+`pnpm check:rules` enforces the conventions a linter cannot see: no em dashes, every
+`process.env` variable documented in `.env.example`, every server action checking its own
+session, and test files named for the suite they belong to. Add a rule there whenever one of
+these conventions gets broken.
+
 ## Tests
 
 - `pnpm test` runs everything. `pnpm test:watch` while working.

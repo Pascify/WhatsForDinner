@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  history:
+    # The conventions git itself can check. Runs on pull requests only.
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Branch name follows hammad-wfd/<description>
+        run: |
+          branch="${{ github.head_ref }}"
+          if [[ ! "$branch" =~ ^hammad-wfd/[a-z0-9._-]+$ ]]; then
+            echo "Branch '$branch' should look like hammad-wfd/short-description"
+            exit 1
+          fi
+
+      - name: Commits carry no co-author trailer and no em dash
+        run: |
+          # The base branch is not checked out by default, so fetch just its tip.
+          git fetch --depth=1 origin "${{ github.base_ref }}"
+          range="FETCH_HEAD..HEAD"
+          failed=0
+
+          if git log "$range" --format=%B | grep -q "^Co-Authored-By:"; then
+            echo "A commit message carries a Co-Authored-By trailer:"
+            git log "$range" --format="  %h %s" --grep="^Co-Authored-By:"
+            failed=1
+          fi
+
+          if git log "$range" --format=%B | grep -q $'\u2014'; then
+            echo "A commit message contains an em dash. Use a comma, colon or hyphen."
+            failed=1
+          fi
+
+          exit $failed
+
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      # mongodb-memory-server downloads a ~77 MB binary for the integration tests.
+      - name: Cache the MongoDB test binary
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/mongodb-binaries
+          key: mongodb-binaries-${{ runner.os }}
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm check:rules
+      - run: pnpm test
+      - run: pnpm build
+        env:
+          # The build reads no secrets; these only keep the checks honest if that ever changes.
+          NEXT_TELEMETRY_DISABLED: "1"
