@@ -4,11 +4,11 @@ import { Button, Card, PageHeader, QuietButton } from "@/components/ui";
 import { Nav } from "@/components/Nav";
 import { currentUser } from "@/lib/auth/session";
 import { toBotUser } from "@/lib/portal/data";
-import { TAG_GROUPS, type Rule } from "@/lib/plan/types";
+import { DAYS, describeRule } from "@/lib/portal/rules";
+import { RuleBuilder } from "./RuleBuilder";
 
 export const dynamic = "force-dynamic";
 
-const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const ZONES = [
   "Asia/Karachi",
   "Asia/Dubai",
@@ -18,28 +18,6 @@ const ZONES = [
   "America/Los_Angeles",
   "Australia/Sydney",
 ];
-const RULE_TAGS = [...TAG_GROUPS.protein, ...TAG_GROUPS.base, ...TAG_GROUPS.vibe, ...TAG_GROUPS.diet];
-
-function describeRule(rule: Rule): string {
-  const tags = rule.tags.join(" + ");
-  switch (rule.kind) {
-    case "always":
-      return `Always ${tags}`;
-    case "never":
-      return `Never ${tags}`;
-    case "day":
-      return `${DAYS[rule.day]}: ${tags}`;
-    case "quota":
-      return [
-        rule.max !== undefined && `At most ${rule.max} ${tags} a week`,
-        rule.min !== undefined && `At least ${rule.min} ${tags} a week`,
-      ]
-        .filter(Boolean)
-        .join(", ");
-    default:
-      return `Prefer ${tags}`;
-  }
-}
 
 export default async function PreferencesPage() {
   const doc = await currentUser();
@@ -172,8 +150,8 @@ export default async function PreferencesPage() {
       <Card>
         <h2 className="mb-1 font-medium">Rules</h2>
         <p className="mb-3 text-sm text-stone-500">
-          Always and never rules are never broken. Day rules and weekly limits bend only when
-          nothing else fits, and the plan says when that happened.
+          &ldquo;I don&rsquo;t eat&rdquo; and &ldquo;every dinner&rdquo; rules are never broken. Day
+          rules and how-often rules bend only when nothing else fits, and the plan says so.
         </p>
 
         {user.rules.length === 0 ? (
@@ -192,63 +170,7 @@ export default async function PreferencesPage() {
           </ul>
         )}
 
-        <form action={addRule} className="space-y-3 border-t border-stone-200 pt-4 text-sm dark:border-stone-800">
-          <div className="flex flex-wrap items-center gap-3">
-            <select
-              name="kind"
-              className="rounded border border-stone-300 px-2 py-1 dark:border-stone-700 dark:bg-stone-900"
-            >
-              <option value="never">Never</option>
-              <option value="always">Always</option>
-              <option value="day">On a day</option>
-              <option value="quota">Weekly limit</option>
-            </select>
-            <select
-              name="day"
-              className="rounded border border-stone-300 px-2 py-1 dark:border-stone-700 dark:bg-stone-900"
-            >
-              {DAYS.map((day, index) => (
-                <option key={day} value={index}>
-                  {day}
-                </option>
-              ))}
-            </select>
-            <label>
-              min{" "}
-              <input
-                type="number"
-                name="min"
-                min={0}
-                max={7}
-                className="w-14 rounded border border-stone-300 px-2 py-1 dark:border-stone-700 dark:bg-stone-900"
-              />
-            </label>
-            <label>
-              max{" "}
-              <input
-                type="number"
-                name="max"
-                min={0}
-                max={7}
-                className="w-14 rounded border border-stone-300 px-2 py-1 dark:border-stone-700 dark:bg-stone-900"
-              />
-            </label>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            {RULE_TAGS.map((tag) => (
-              <label
-                key={tag}
-                className="rounded-full border border-stone-300 px-2 py-0.5 text-xs dark:border-stone-700"
-              >
-                <input type="checkbox" name="tags" value={tag} className="mr-1" />
-                {tag}
-              </label>
-            ))}
-          </div>
-
-          <Button type="submit">Add rule</Button>
-        </form>
+        <RuleBuilder action={addRule} />
       </Card>
     </main>
   );

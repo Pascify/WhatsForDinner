@@ -66,13 +66,16 @@ export function readRuleForm(form: FormData): Rule | undefined {
   if (kind === "day") return { kind, day: readWeekday(form.get("day"), 0), tags };
 
   if (kind === "quota") {
-    const max = Number(form.get("max"));
-    const min = Number(form.get("min"));
+    // The builder sends "how" and "times"; min and max are the older raw fields.
+    const how = String(form.get("how") ?? "");
+    const count = Number(form.get("times"));
+    const max = how === "at_most" || how === "exactly" ? count : Number(form.get("max"));
+    const min = how === "at_least" || how === "exactly" ? count : Number(form.get("min"));
     const rule: Rule = {
       kind: "quota",
       tags,
-      ...(Number.isInteger(max) && max > 0 ? { max } : {}),
-      ...(Number.isInteger(min) && min > 0 ? { min } : {}),
+      ...(Number.isInteger(max) && max > 0 && max <= 7 ? { max } : {}),
+      ...(Number.isInteger(min) && min > 0 && min <= 7 ? { min } : {}),
     };
     return "max" in rule || "min" in rule ? rule : undefined;
   }

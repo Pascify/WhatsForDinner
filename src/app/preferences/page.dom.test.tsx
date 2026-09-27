@@ -1,3 +1,4 @@
+import userEvent from "@testing-library/user-event";
 import { render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { userDoc } from "@/test/page-fixtures";
@@ -91,11 +92,11 @@ describe("preferences", () => {
 
     await renderPage();
 
-    expect(screen.getByText("Always halal")).toBeInTheDocument();
-    expect(screen.getByText("Never beef + fish")).toBeInTheDocument();
-    expect(screen.getByText("Friday: rice + chicken")).toBeInTheDocument();
-    expect(screen.getByText("At most 1 pasta a week")).toBeInTheDocument();
-    expect(screen.getByText("At least 3 healthy a week")).toBeInTheDocument();
+    expect(screen.getByText("Every dinner is halal")).toBeInTheDocument();
+    expect(screen.getByText("No beef or fish")).toBeInTheDocument();
+    expect(screen.getByText("Fridays: rice and chicken")).toBeInTheDocument();
+    expect(screen.getByText("Pasta at most once a week")).toBeInTheDocument();
+    expect(screen.getByText("Healthy at least 3 times a week")).toBeInTheDocument();
   });
 
   it("gives every rule its own remove button, with its position", async () => {
@@ -119,13 +120,38 @@ describe("preferences", () => {
     expect(positions).toEqual(["0", "1"]);
   });
 
-  it("offers tags to build a rule from", async () => {
+  it("asks for the kind of rule before offering anything to pick", async () => {
     currentUser.mockResolvedValue(userDoc());
     await renderPage();
 
+    expect(screen.queryByRole("checkbox", { name: "chicken" })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("radio", { name: /I don't eat/ }));
+
     expect(screen.getByRole("checkbox", { name: "chicken" })).toHaveAttribute("value", "chicken");
-    expect(screen.getByRole("checkbox", { name: "halal" })).toBeInTheDocument();
+    // Diet is what "every dinner must be" is for, not what someone refuses.
+    expect(screen.queryByRole("checkbox", { name: "halal" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Add rule" })).toBeInTheDocument();
+  });
+
+  it("builds a how-often rule as a sentence", async () => {
+    currentUser.mockResolvedValue(userDoc());
+    await renderPage();
+
+    await userEvent.click(screen.getByRole("radio", { name: /How often/ }));
+    await userEvent.click(screen.getByRole("checkbox", { name: "chicken" }));
+    await userEvent.selectOptions(screen.getByRole("combobox", { name: "How often" }), "exactly");
+
+    expect(screen.getByText("Chicken exactly twice a week")).toBeInTheDocument();
+  });
+
+  it("offers only diets for a rule every dinner must follow", async () => {
+    currentUser.mockResolvedValue(userDoc());
+    await renderPage();
+
+    await userEvent.click(screen.getByRole("radio", { name: /Every dinner must be/ }));
+
+    expect(screen.getByRole("checkbox", { name: "halal" })).toBeInTheDocument();
+    expect(screen.queryByRole("checkbox", { name: "chicken" })).not.toBeInTheDocument();
   });
 
   it("explains which rules bend", async () => {
