@@ -111,6 +111,12 @@ these conventions gets broken.
   132001 template missing or unapproved, 190 bad token. `src/lib/whatsapp/errors.ts` maps them.
 - Meta retries webhook deliveries, so every inbound message is checked against `seenMessage`.
 - The test number only reaches 5 numbers added by hand in the Meta dashboard.
+- **A banned or unregistered number still accepts sends** and returns a message id, then
+  delivers nothing, and inbound messages to it stay on one tick. Check `status` on the phone
+  number before debugging anything else: `pnpm doctor` does this.
+- **Configuring the callback URL does not subscribe the app.** The app has to appear in the
+  WhatsApp account's `subscribed_apps`, which only `POST /{WABA_ID}/subscribed_apps` sets.
+  Without it Meta accepts the webhook config and never delivers a message.
 
 ## Next.js 16
 

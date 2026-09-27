@@ -15,7 +15,8 @@
     "test:integration": "vitest run integration",
     "test:dom": "vitest run --project dom",
     "preflight": "tsx --env-file-if-exists=.env.local scripts/preflight.mts",
-    "check:rules": "tsx scripts/check-rules.mts"
+    "check:rules": "tsx scripts/check-rules.mts",
+    "doctor": "tsx --env-file-if-exists=.env.local scripts/doctor.mts"
   },
   "dependencies": {
     "mongodb": "^7.6.0",
