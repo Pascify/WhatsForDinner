@@ -1,0 +1,25 @@
+# Labels a pull request by the parts of the app it touches.
+bot:
+  - changed-files:
+      - any-glob-to-any-file: ["src/lib/bot/**", "src/lib/whatsapp/**", "src/app/api/whatsapp/**"]
+delivery:
+  - changed-files:
+      - any-glob-to-any-file: ["src/lib/delivery/**", "src/app/api/cron/**", ".github/workflows/deliver.yml"]
+planner:
+  - changed-files:
+      - any-glob-to-any-file: ["src/lib/plan/**", "src/data/**"]
+portal:
+  - changed-files:
+      - any-glob-to-any-file: ["src/app/**", "src/components/**", "src/lib/portal/**", "src/lib/auth/**"]
+database:
+  - changed-files:
+      - any-glob-to-any-file: ["src/lib/db/**", "scripts/setup-db.mts"]
+ci:
+  - changed-files:
+      - any-glob-to-any-file: [".github/**", "scripts/check-rules.mts"]
+docs:
+  - changed-files:
+      - any-glob-to-any-file: ["docs/**", "*.md"]
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file: ["package.json", "pnpm-lock.yaml"]
