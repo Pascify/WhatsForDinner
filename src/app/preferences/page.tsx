@@ -28,7 +28,7 @@ function describeRule(rule: Rule): string {
     case "never":
       return `Never ${tags}`;
     case "day":
-      return `${DAYS[rule.day]} — ${tags}`;
+      return `${DAYS[rule.day]}: ${tags}`;
     case "quota":
       return [
         rule.max !== undefined && `At most ${rule.max} ${tags} a week`,

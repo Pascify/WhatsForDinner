@@ -39,7 +39,7 @@ export function statusFor(account: AccountFacts): Status {
   return { status: "active" };
 }
 
-/** Digits only, country code first — the format the Cloud API uses for `from` and `to`. */
+/** Digits only, country code first - the format the Cloud API uses for `from` and `to`. */
 export function normalisePhone(input: string): string | undefined {
   const digits = input.replace(/\D/g, "");
   return digits.length >= 8 && digits.length <= 15 ? digits : undefined;

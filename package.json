@@ -10,7 +10,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "setup-db": "node --experimental-strip-types --env-file=.env.local scripts/setup-db.mts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:unit": "vitest run --exclude '**/*.integration.test.ts' --exclude '**/node_modules/**'",
+    "test:integration": "vitest run integration"
   },
   "dependencies": {
     "mongodb": "^7.6.0",
@@ -28,6 +30,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.6",
+    "mongodb-memory-server": "^11.3.0",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^5.0.1"

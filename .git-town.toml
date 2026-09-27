@@ -1,0 +1,6 @@
+# Stacked branches, same workflow as the harlyy repos.
+[branches]
+main = "main"
+
+[sync]
+feature-strategy = "rebase"

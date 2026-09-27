@@ -2,10 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { currentUser } from "@/lib/auth/session";
-import { TAG_GROUPS, type Tag } from "@/lib/plan/types";
+import { readTags } from "@/lib/portal/forms";
 import { addMeal, setHidden } from "@/lib/portal/meals";
-
-const ALL_TAGS = new Set<string>(Object.values(TAG_GROUPS).flat());
 
 async function requireUserId() {
   const doc = await currentUser();
@@ -24,11 +22,6 @@ export async function createMeal(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return;
 
-  const tags = formData
-    .getAll("tags")
-    .map(String)
-    .filter((tag): tag is Tag => ALL_TAGS.has(tag));
-
-  await addMeal(userId, name, tags);
+  await addMeal(userId, name, readTags(formData.getAll("tags")));
   revalidatePath("/meals");
 }
