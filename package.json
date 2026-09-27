@@ -10,7 +10,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "setup-db": "tsx --env-file-if-exists=.env.local scripts/setup-db.mts",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "next typegen && tsc --noEmit",
     "test:unit": "vitest run --project node --exclude '**/*.integration.test.ts' --exclude '**/node_modules/**'",
     "test:integration": "vitest run integration",
     "test:dom": "vitest run --project dom",
