@@ -55,8 +55,15 @@ if (!failed) {
     text: "If you are reading this, one-time codes will reach your users.",
   });
 
-  if (sent.ok) ok(`test mail sent to ${to}, check the inbox`);
-  else bad(`Gmail rejected the send: ${sent.error}`);
+  if (sent.ok) {
+    ok(`test mail sent to ${to}, check the inbox`);
+  } else {
+    bad(`Gmail rejected the send: ${sent.error}`);
+    if (/BadCredentials|Invalid login/.test(sent.error)) {
+      console.log("        This is usually an app password from a different account, or the");
+      console.log("        account password instead of a 16-character app password.");
+    }
+  }
 
   console.log("\nWhatsApp");
   const version = process.env.WHATSAPP_GRAPH_VERSION ?? "v23.0";
