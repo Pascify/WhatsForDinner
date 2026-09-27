@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { currentUser } from "@/lib/auth/session";
 import { readTags } from "@/lib/portal/forms";
 import { addMeal, setHidden } from "@/lib/portal/meals";
+import type { ActionResult } from "@/lib/portal/plan";
 
 async function requireUserId() {
   const doc = await currentUser();
@@ -17,11 +18,15 @@ export async function toggleMeal(formData: FormData) {
   revalidatePath("/meals");
 }
 
-export async function createMeal(formData: FormData) {
+export async function createMeal(
+  _previous: ActionResult | undefined,
+  formData: FormData,
+): Promise<ActionResult> {
   const userId = await requireUserId();
   const name = String(formData.get("name") ?? "").trim();
-  if (!name) return;
+  if (!name) return { ok: false, message: "Give the meal a name." };
 
   await addMeal(userId, name, readTags(formData.getAll("tags")));
   revalidatePath("/meals");
+  return { ok: true, message: `Added ${name}.` };
 }
