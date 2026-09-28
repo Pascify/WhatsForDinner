@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createMeal, toggleMeal } from "@/app/actions/meals";
-import { Badge, Button, Card, Input, PageHeader, QuietButton } from "@/components/ui";
+import { Badge, Card, Input, PageHeader, QuietButton } from "@/components/ui";
+import { ActionForm, SubmitButton } from "@/components/ActionForm";
 import { Nav } from "@/components/Nav";
 import { currentUser } from "@/lib/auth/session";
 import { catalogFor } from "@/lib/portal/meals";
@@ -30,7 +31,7 @@ export default async function MealsPage() {
 
       <Card className="mb-6">
         <h2 className="mb-3 font-medium">Add your own</h2>
-        <form action={createMeal} className="space-y-3">
+        <ActionForm action={createMeal} className="space-y-3">
           <Input name="name" placeholder="Chicken Karahi" required maxLength={60} />
           <div className="flex flex-wrap gap-2">
             {NEW_MEAL_TAGS.map((tag) => (
@@ -46,8 +47,8 @@ export default async function MealsPage() {
           <p className="text-xs text-stone-500">
             Tags are what rules match on, so a meal with no tags can only be picked at random.
           </p>
-          <Button type="submit">Add meal</Button>
-        </form>
+          <SubmitButton label="Add meal" pendingLabel="Adding…" />
+        </ActionForm>
       </Card>
 
       <ul className="space-y-2">

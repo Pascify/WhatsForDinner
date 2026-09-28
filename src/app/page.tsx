@@ -1,5 +1,6 @@
 import { regenerateWeek, swapDay } from "@/app/actions/plan";
-import { Badge, Button, Card, PageHeader, QuietButton } from "@/components/ui";
+import { Badge, Button, Card, PageHeader } from "@/components/ui";
+import { ActionForm, SubmitButton } from "@/components/ActionForm";
 import { Landing } from "@/components/Landing";
 import { Nav } from "@/components/Nav";
 import { currentUser } from "@/lib/auth/session";
@@ -35,9 +36,9 @@ export default async function DashboardPage() {
       <PageHeader
         title={`Week of ${shortDate(weekOf)}`}
         action={
-          <form action={regenerateWeek}>
-            <QuietButton type="submit">Regenerate</QuietButton>
-          </form>
+          <ActionForm action={regenerateWeek} className="text-right">
+            <SubmitButton quiet label="Regenerate" pendingLabel="Regenerating…" />
+          </ActionForm>
         }
       />
 
@@ -52,10 +53,10 @@ export default async function DashboardPage() {
                 </p>
                 <p className="font-medium">{names.get(day.mealId) ?? "Something tasty"}</p>
               </div>
-              <form action={swapDay}>
+              <ActionForm action={swapDay} className="max-w-48 text-right">
                 <input type="hidden" name="date" value={day.date} />
-                <QuietButton type="submit">Swap</QuietButton>
-              </form>
+                <SubmitButton quiet label="Swap" pendingLabel="Swapping…" />
+              </ActionForm>
             </Card>
           </li>
         ))}
