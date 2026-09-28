@@ -9,7 +9,10 @@ import type { BotStore, BotUser } from "./store";
 export class MemoryBotStore implements BotStore {
   readonly users = new Map<string, BotUser>();
   private linkCodes = new Map<string, { userId: string; purpose: LinkCodePurpose }>();
-  private otps = new Map<string, { codeHash: string; attempts: number; expiresAt: Date }>();
+  private otps = new Map<
+    string,
+    { codeHash: string; attempts: number; expiresAt: Date; createdAt: Date; purpose: OtpPurpose }
+  >();
   private seen = new Set<string>();
   private counters = new Map<string, number>();
   private plans = new Map<string, Plan>();
@@ -102,23 +105,29 @@ export class MemoryBotStore implements BotStore {
     return found;
   }
 
-  async issueOtp(email: string, purpose: OtpPurpose) {
-    void purpose;
+  async issueOtp(email: string, purpose: OtpPurpose, now = new Date()) {
     const code = "123456";
     this.lastOtp = code;
     this.otps.set(email.toLowerCase(), {
       codeHash: hashCode(code),
       attempts: 0,
-      expiresAt: new Date(Date.now() + OTP_TTL_MS),
+      expiresAt: new Date(now.getTime() + OTP_TTL_MS),
+      createdAt: now,
+      purpose,
     });
     return code;
   }
 
-  async checkOtp(email: string, code: string) {
+  async lastOtpAt(email: string, purpose: OtpPurpose) {
+    const record = this.otps.get(email.toLowerCase());
+    return record?.purpose === purpose ? record.createdAt : undefined;
+  }
+
+  async checkOtp(email: string, code: string, now = new Date()) {
     const record = this.otps.get(email.toLowerCase());
     if (!record) return { ok: false as const, reason: "expired" as const };
 
-    const result = checkCode(record, code);
+    const result = checkCode(record, code, now);
     if (result.ok) this.otps.delete(email.toLowerCase());
     else record.attempts += 1;
     return result;

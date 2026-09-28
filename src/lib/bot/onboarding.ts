@@ -17,7 +17,7 @@ export type OnboardingState = { step: OnboardingStep; draft: OnboardingDraft };
 export type Inbound = { text?: string; replyId?: string };
 
 /** Whatever the caller had to do against the database before this step could move on. */
-export type StepOutcome = { emailVerified?: boolean; emailError?: string };
+export type StepOutcome = { emailVerified?: boolean; emailError?: string; resendTooSoon?: boolean };
 
 export type Effect =
   { kind: "send_email_otp"; email: string } | { kind: "finish"; draft: OnboardingDraft };
@@ -212,9 +212,16 @@ export function advanceOnboarding(
     }
 
     case "verify_email": {
-      if (/^(resend|change)$/i.test(text)) {
-        if (/^change$/i.test(text)) return goto("ask_email", [askEmail()]);
-        return stay(message(`Sent again to ${draft.email}.`));
+      if (/^change$/i.test(text) || !draft.email) return goto("ask_email", [askEmail()]);
+      if (/^resend$/i.test(text)) {
+        if (outcome.resendTooSoon) {
+          return stay(message("I just sent one. Give it a minute, then type *resend* again."));
+        }
+        return goto(
+          "verify_email",
+          [message(`Sent again to ${draft.email}.`)],
+          [{ kind: "send_email_otp", email: draft.email }],
+        );
       }
       if (outcome.emailVerified) return goto("ask_diet", [message("✅ Verified."), askDiet()]);
       return stay(

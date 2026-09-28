@@ -1,4 +1,4 @@
-import { findLinkCode } from "@/lib/auth/codes";
+import { canResend, findLinkCode } from "@/lib/auth/codes";
 import { decideLink } from "@/lib/accounts/policy";
 import type { EmailSender } from "@/lib/email/types";
 import type { InboundEvent } from "@/lib/whatsapp/inbound";
@@ -77,7 +77,7 @@ export async function handleInbound(event: InboundEvent, deps: BotDeps): Promise
   await deps.store.touchInbound(user.id, now);
 
   if (user.onboarding.step !== "done") {
-    await continueOnboarding(user, event, deps, phone);
+    await continueOnboarding(user, event, deps, phone, now);
     return;
   }
 
@@ -112,7 +112,13 @@ async function handleUnknownNumber(
     const linked = await deps.store.findUserByPhone(phone);
 
     if (linked && linked.onboarding.step !== "done") {
-      await continueOnboarding(linked, { ...event, text: "", replyId: undefined }, deps, phone);
+      await continueOnboarding(
+        linked,
+        { ...event, text: "", replyId: undefined },
+        deps,
+        phone,
+        now,
+      );
       return;
     }
     await reply(deps, phone, [
@@ -138,9 +144,10 @@ async function continueOnboarding(
   event: Extract<InboundEvent, { type: "message" }>,
   deps: BotDeps,
   phone: string,
+  now: Date,
 ) {
   const stepBefore = user.onboarding.step;
-  const outcome = await resolveOutcome(user, event, deps);
+  const outcome = await resolveOutcome(user, event, deps, now);
   const result = advanceOnboarding(
     user.onboarding,
     { text: event.text, replyId: event.replyId },
@@ -156,7 +163,7 @@ async function continueOnboarding(
 
   for (const effect of result.effects) {
     if (effect.kind === "send_email_otp") {
-      const code = await deps.store.issueOtp(effect.email, "signup");
+      const code = await deps.store.issueOtp(effect.email, "signup", now);
       await deps.email.send({ to: effect.email, subject: OTP_SUBJECT, text: otpBody(code) });
     }
     if (effect.kind === "finish") {
@@ -187,19 +194,27 @@ async function sendFirstPlan(userId: string, deps: BotDeps, phone: string) {
   await deliverPlan(user, plan, "weekly", deps, now);
 }
 
-/** Checks the typed code when the machine is waiting on one. */
+/** Checks the typed code, or the resend cooldown, when the machine is waiting on a code. */
 async function resolveOutcome(
   user: BotUser,
   event: Extract<InboundEvent, { type: "message" }>,
   deps: BotDeps,
+  now: Date,
 ): Promise<StepOutcome> {
   if (user.onboarding.step !== "verify_email") return {};
 
-  const typed = event.text.replace(/\D/g, "");
   const email = user.onboarding.draft.email;
-  if (!email || typed.length !== 6) return {};
+  if (!email) return {};
 
-  const result = await deps.store.checkOtp(email, typed);
+  if (/^resend$/i.test(event.text.trim())) {
+    const lastSentAt = await deps.store.lastOtpAt(email, "signup");
+    return { resendTooSoon: !canResend(lastSentAt, now) };
+  }
+
+  const typed = event.text.replace(/\D/g, "");
+  if (typed.length !== 6) return {};
+
+  const result = await deps.store.checkOtp(email, typed, now);
   if (result.ok) return { emailVerified: true };
 
   const reasons: Record<string, string> = {
