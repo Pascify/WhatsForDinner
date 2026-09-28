@@ -13,7 +13,10 @@ const clip = (value: string, limit = MAX_TITLE) =>
  * rejects the whole message if one does. Meal names are user-editable, so clean them here.
  */
 export function cleanTemplateVariable(value: string): string {
-  return value.replace(/[\r\n\t]+/g, " ").replace(/ {4,}/g, "   ").trim();
+  return value
+    .replace(/[\r\n\t]+/g, " ")
+    .replace(/ {4,}/g, "   ")
+    .trim();
 }
 
 export function buildPayload(message: OutboundMessage): Record<string, unknown> {

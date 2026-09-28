@@ -71,15 +71,16 @@ export function parseCommand(text = "", replyId?: string): Command {
     if (accept) return { kind: "swap_accept", date: accept[1], mealId: accept[2] };
   }
 
-  const cleaned = text.trim().toLowerCase().replace(/[!.,]+$/, "");
+  const cleaned = text
+    .trim()
+    .toLowerCase()
+    .replace(/[!.,]+$/, "");
   for (const [pattern, command] of WORDS) {
     if (pattern.test(cleaned)) return command;
   }
 
   // "swap friday" and "change tuesday" are common enough to be worth reading.
-  const named = cleaned.match(
-    /^(?:swap|change)\s+(sun|mon|tue|wed|thu|fri|sat)[a-z]*$/,
-  );
+  const named = cleaned.match(/^(?:swap|change)\s+(sun|mon|tue|wed|thu|fri|sat)[a-z]*$/);
   if (named) return { kind: "swap" };
 
   return { kind: "help" };

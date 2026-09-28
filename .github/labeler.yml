@@ -4,13 +4,15 @@ bot:
       - any-glob-to-any-file: ["src/lib/bot/**", "src/lib/whatsapp/**", "src/app/api/whatsapp/**"]
 delivery:
   - changed-files:
-      - any-glob-to-any-file: ["src/lib/delivery/**", "src/app/api/cron/**", ".github/workflows/deliver.yml"]
+      - any-glob-to-any-file:
+          ["src/lib/delivery/**", "src/app/api/cron/**", ".github/workflows/deliver.yml"]
 planner:
   - changed-files:
       - any-glob-to-any-file: ["src/lib/plan/**", "src/data/**"]
 portal:
   - changed-files:
-      - any-glob-to-any-file: ["src/app/**", "src/components/**", "src/lib/portal/**", "src/lib/auth/**"]
+      - any-glob-to-any-file:
+          ["src/app/**", "src/components/**", "src/lib/portal/**", "src/lib/auth/**"]
 database:
   - changed-files:
       - any-glob-to-any-file: ["src/lib/db/**", "scripts/setup-db.mts"]

@@ -138,8 +138,17 @@ describe("MongoBotStore", () => {
       const created = await store.createUser({ channel: "portal" });
       const ownerId = new ObjectId(created.id);
 
-      await (await meals()).insertMany([
-        { _id: new ObjectId(), ownerId, id: "chicken-karahi", name: "Chicken Karahi", tags: [], hidden: true },
+      await (
+        await meals()
+      ).insertMany([
+        {
+          _id: new ObjectId(),
+          ownerId,
+          id: "chicken-karahi",
+          name: "Chicken Karahi",
+          tags: [],
+          hidden: true,
+        },
         { _id: new ObjectId(), ownerId, id: "nihari-night", name: "Nihari Night", tags: ["beef"] },
       ]);
 
@@ -211,7 +220,9 @@ describe("MongoBotStore", () => {
     it("starts the count again in a new month", async () => {
       await store.paidBudget();
       await store.recordPaidSend();
-      await (await adminSettings()).updateOne({ _id: "admin" }, { $set: { countingMonth: "2020-01" } });
+      await (
+        await adminSettings()
+      ).updateOne({ _id: "admin" }, { $set: { countingMonth: "2020-01" } });
 
       expect(await store.paidBudget()).toMatchObject({ sentThisMonth: 0 });
 
@@ -252,7 +263,9 @@ describe("MongoBotStore", () => {
   it("deletes an account with its plans, history and meals", async () => {
     const created = await store.createUser({ phone: PHONE, channel: "whatsapp" });
     await store.savePlan(created.id, plan);
-    await (await meals()).insertOne({
+    await (
+      await meals()
+    ).insertOne({
       _id: new ObjectId(),
       ownerId: new ObjectId(created.id),
       id: "mine",

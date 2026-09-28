@@ -12,7 +12,9 @@ describe("describeRule", () => {
   });
 
   it("says how often in words", () => {
-    expect(describeRule({ kind: "quota", tags: ["pasta"], max: 1 })).toBe("Pasta at most once a week");
+    expect(describeRule({ kind: "quota", tags: ["pasta"], max: 1 })).toBe(
+      "Pasta at most once a week",
+    );
     expect(describeRule({ kind: "quota", tags: ["healthy"], min: 3 })).toBe(
       "Healthy at least 3 times a week",
     );

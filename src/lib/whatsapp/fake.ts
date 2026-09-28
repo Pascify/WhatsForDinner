@@ -29,7 +29,9 @@ export class FakeWhatsAppClient implements WhatsAppClient {
 
   /** Every plain-text body sent so far, for readable assertions. */
   texts(): string[] {
-    return this.sent.map((message) => (message.kind === "text" ? message.text : message.template.name));
+    return this.sent.map((message) =>
+      message.kind === "text" ? message.text : message.template.name,
+    );
   }
 
   reset() {

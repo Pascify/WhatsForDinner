@@ -98,5 +98,7 @@ if (!failed) {
   }
 }
 
-console.log(failed ? "\nNot ready yet. Fix the failures above.\n" : "\nReady for an end-to-end run.\n");
+console.log(
+  failed ? "\nNot ready yet. Fix the failures above.\n" : "\nReady for an end-to-end run.\n",
+);
 process.exit(failed ? 1 : 0);

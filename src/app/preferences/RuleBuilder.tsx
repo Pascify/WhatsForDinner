@@ -34,18 +34,23 @@ export function RuleBuilder({ action }: { action: Action }) {
   const [how, setHow] = useState<How>("at_most");
   const [count, setCount] = useState(2);
 
-  const [result, run] = useActionState(async (previous: ActionResult | undefined, form: FormData) => {
-    const outcome = await action(previous, form);
-    if (outcome.ok) {
-      setKind(undefined);
-      setTags([]);
-    }
-    return outcome;
-  }, undefined);
+  const [result, run] = useActionState(
+    async (previous: ActionResult | undefined, form: FormData) => {
+      const outcome = await action(previous, form);
+      if (outcome.ok) {
+        setKind(undefined);
+        setTags([]);
+      }
+      return outcome;
+    },
+    undefined,
+  );
 
   const choice = RULE_CHOICES.find((option) => option.kind === kind);
   const toggle = (tag: Tag) =>
-    setTags((current) => (current.includes(tag) ? current.filter((t) => t !== tag) : [...current, tag]));
+    setTags((current) =>
+      current.includes(tag) ? current.filter((t) => t !== tag) : [...current, tag],
+    );
 
   const draft: Rule | undefined =
     kind && tags.length > 0
@@ -184,13 +189,18 @@ export function RuleBuilder({ action }: { action: Action }) {
 
           <div className="flex flex-wrap items-center gap-3">
             <SubmitButton label="Add rule" pendingLabel="Adding…" />
-            {draft && <span className="text-stone-600 dark:text-stone-300">{describeRule(draft)}</span>}
+            {draft && (
+              <span className="text-stone-600 dark:text-stone-300">{describeRule(draft)}</span>
+            )}
           </div>
         </form>
       )}
 
       {result && (
-        <p role="status" className={`text-xs ${result.ok ? "text-emerald-700 dark:text-emerald-400" : "text-red-600"}`}>
+        <p
+          role="status"
+          className={`text-xs ${result.ok ? "text-emerald-700 dark:text-emerald-400" : "text-red-600"}`}
+        >
           {result.message}
         </p>
       )}

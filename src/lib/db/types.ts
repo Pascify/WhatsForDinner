@@ -50,7 +50,11 @@ export type UserDoc = {
   role: "user" | "admin";
   /** IANA zone, e.g. Asia/Karachi. Drives when the weekly job fires for this user. */
   timezone: string;
-  onboarding: { step: OnboardingStep; channel: "portal" | "whatsapp"; draft?: Record<string, unknown> };
+  onboarding: {
+    step: OnboardingStep;
+    channel: "portal" | "whatsapp";
+    draft?: Record<string, unknown>;
+  };
   rules: Rule[];
   repeatGapDays?: number;
   delivery: DeliverySettings;

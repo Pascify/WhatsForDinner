@@ -172,7 +172,11 @@ describe("handleInbound", () => {
   });
 
   it("offers help to a set-up account", async () => {
-    store.seedUser({ phone: PHONE, status: "active", onboarding: { step: "done", draft: emptyDraft() } });
+    store.seedUser({
+      phone: PHONE,
+      status: "active",
+      onboarding: { step: "done", draft: emptyDraft() },
+    });
 
     await say("hello");
     expect(lastText()).toMatch(/Here's what I can do/);
@@ -198,4 +202,4 @@ describe("when WhatsApp refuses a reply", () => {
 
     await expect(say("Hi")).rejects.toThrow(/WhatsApp refused the reply \(190\)/);
   });
-})
+});

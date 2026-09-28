@@ -20,7 +20,14 @@ export function LoginForm() {
         <label className="block text-sm font-medium" htmlFor="email">
           Email
         </label>
-        <Input id="email" name="email" type="email" required defaultValue={emailState.email} autoFocus />
+        <Input
+          id="email"
+          name="email"
+          type="email"
+          required
+          defaultValue={emailState.email}
+          autoFocus
+        />
         {emailState.error && <p className="text-sm text-red-600">{emailState.error}</p>}
         <Button type="submit" disabled={askPending} className="w-full">
           {askPending ? "Sending…" : "Email me a code"}

@@ -63,7 +63,8 @@ for (const file of walk(join(ROOT, "src"), (path) => /\.(ts|tsx)$/.test(path)).c
 const actionsDir = join(ROOT, "src/app/actions");
 for (const file of walk(actionsDir, (path) => path.endsWith(".ts") && !path.endsWith("auth.ts"))) {
   const contents = readFileSync(file, "utf8");
-  if (!contents.includes('"use server"')) fail(file, undefined, 'missing the "use server" directive');
+  if (!contents.includes('"use server"'))
+    fail(file, undefined, 'missing the "use server" directive');
   if (!contents.includes("currentUser")) {
     fail(file, undefined, "no session check: every server action must verify the session itself");
   }

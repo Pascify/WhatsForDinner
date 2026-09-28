@@ -47,7 +47,8 @@ const event = (text: string, replyId?: string): InboundEvent => ({
 });
 
 const say = (text: string, replyId?: string) => handleInbound(event(text, replyId), deps);
-const last = () => whatsapp.lastMessage as { text: string; buttons?: { id: string }[]; list?: unknown };
+const last = () =>
+  whatsapp.lastMessage as { text: string; buttons?: { id: string }[]; list?: unknown };
 
 describe("commands", () => {
   it("builds the week on first ask and repeats the same one after", async () => {
@@ -73,7 +74,10 @@ describe("commands", () => {
   it("generates next week's plan when tomorrow crosses the week end", async () => {
     // Sunday night in Karachi, so "tomorrow" is Monday of the following week.
     await handleInbound(
-      { ...(event("tomorrow") as Extract<InboundEvent, { type: "message" }>), at: new Date("2026-09-27T15:00:00Z") },
+      {
+        ...(event("tomorrow") as Extract<InboundEvent, { type: "message" }>),
+        at: new Date("2026-09-27T15:00:00Z"),
+      },
       deps,
     );
 
@@ -114,11 +118,12 @@ describe("commands", () => {
     await say("plan");
     store.seedUser({ id: "unused" });
     // Every meal that fits is already on the plan once the catalog is this small.
-    store.mealsFor = async () => (await store.findPlan(userId, "2026-09-21"))!.days.map((day) => ({
-      id: day.mealId,
-      name: day.mealId,
-      tags: [],
-    }));
+    store.mealsFor = async () =>
+      (await store.findPlan(userId, "2026-09-21"))!.days.map((day) => ({
+        id: day.mealId,
+        name: day.mealId,
+        tags: [],
+      }));
 
     await say("Friday", REPLY_IDS.swapDay("2026-09-25"));
     expect(last().text).toMatch(/run out of meals/);

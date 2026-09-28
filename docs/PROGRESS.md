@@ -11,16 +11,16 @@ review was requested the same day. Nothing in the codebase is known to be broken
 
 ## Live setup
 
-| Piece | State |
-| --- | --- |
-| Deployment | `https://pascify-pascify.vercel.app/projects/whatsfordinner` (Vercel project `pascify`, team Pascify, Hobby) |
-| Domain note | The bare domain redirects into the base path. `pascify.vercel.app` was taken, hence the doubled name |
-| Database | MongoDB Atlas M0, Mumbai. Network access `0.0.0.0/0`, which production needs |
-| Email | Gmail SMTP as `whatsfordinnersupport@gmail.com`, app password in Vercel |
-| Env vars | All set in Vercel Production and mirrored in local `.env.local` |
-| Meta webhook | Callback URL verified, `messages` field subscribed, app subscribed to the WABA |
-| Meta account | **Disabled.** Test number `+1 555-156-2911` reports `status: BANNED` |
-| GitHub secrets | **Not set yet**: `MONGODB_URI`, `APP_URL`, `CRON_SECRET`. The hourly workflow cannot run without them |
+| Piece          | State                                                                                                        |
+| -------------- | ------------------------------------------------------------------------------------------------------------ |
+| Deployment     | `https://pascify-pascify.vercel.app/projects/whatsfordinner` (Vercel project `pascify`, team Pascify, Hobby) |
+| Domain note    | The bare domain redirects into the base path. `pascify.vercel.app` was taken, hence the doubled name         |
+| Database       | MongoDB Atlas M0, Mumbai. Network access `0.0.0.0/0`, which production needs                                 |
+| Email          | Gmail SMTP as `whatsfordinnersupport@gmail.com`, app password in Vercel                                      |
+| Env vars       | All set in Vercel Production and mirrored in local `.env.local`                                              |
+| Meta webhook   | Callback URL verified, `messages` field subscribed, app subscribed to the WABA                               |
+| Meta account   | **Disabled.** Test number `+1 555-156-2911` reports `status: BANNED`                                         |
+| GitHub secrets | **Not set yet**: `MONGODB_URI`, `APP_URL`, `CRON_SECRET`. The hourly workflow cannot run without them        |
 
 Run `pnpm doctor` to see all of this in one command: number status, app subscription, and
 whether production can reach the database.
@@ -55,26 +55,26 @@ Pick a display name that reads as a real service. `What's For Dinner` was declin
 
 ## Done
 
-| Area | State |
-| --- | --- |
-| Design doc | Complete: flows, rules, delivery settings, templates, costs, rollout |
-| Scaffold | Next.js 16 + TS + Tailwind + ESLint, `basePath: /projects/whatsfordinner`, git repo |
-| Meal catalog | `src/data/seedMeals.ts`: 40 dinners, tagged (base / protein / style / diet / vibe / cuisine) |
-| Plan generator | `src/lib/plan/`: deterministic, 4 rule strengths, records what it relaxed. **12 tests** |
-| DB layer | `src/lib/db/`: document types, cached Mongo client, typed collections, `ensureIndexes()` |
-| Codes | `src/lib/auth/codes.ts`: OTP + link codes, hashed, expiry/attempt/resend policy. **7 tests** |
-| Bot onboarding | `src/lib/bot/onboarding.ts`: pure state machine, name → email → OTP → diet → halal → restrictions → day rule → delivery → fallback. **14 tests** |
-| WhatsApp client | `src/lib/whatsapp/`: `WhatsAppClient` interface, Cloud API implementation, fake, payload builder (button/list/template limits), Meta error map. **11 tests** |
-| Webhook plumbing | signature check (`X-Hub-Signature-256`), subscription handshake, payload parsing for text / button / list / template replies and delivery statuses. **10 tests** |
-| Bot handler | `src/lib/bot/handler.ts`: dedupe, resume onboarding, portal link codes, email-OTP verification, "welcome back" merge onto an existing account. **13 tests**, run against in-memory fakes |
-| Stores & senders | `BotStore` port with `MemoryBotStore` (tests) and `MongoBotStore` (real), `EmailSender` with a fake and Gmail SMTP |
-| Webhook route | `src/app/api/whatsapp/webhook/route.ts`: GET verify, POST signed + deduped, per-event error isolation |
-| Commands | `plan`, `today`, `tomorrow`, `swap` (day list → suggestion → ✅/🔄), `settings`, `login`, `stop`/`resume`, `delete` + confirm, help. **17 tests** |
-| Delivery | `src/lib/delivery/`: cheapest-first channel choice (free window → email → opt-in paid template), admin cap + kill switch, delivery log, pending plans delivered on next message. **21 tests** |
-| Portal auth | passwordless email-code login, session cookie (hashed token, TTL index), WhatsApp one-time login links, sign-up on first verified code |
-| Portal pages | dashboard (week, swap, regenerate, WhatsApp connect + free-window state), preferences (delivery, region, rule builder), meals (hide/add with tags), admin (spend, cap, kill switch) |
-| Schedule + cron | hourly `runTick` matching each user's own timezone, weekly + daily + next-day paid fallback, `POST /api/cron/tick` behind a shared secret, `.github/workflows/deliver.yml` |
-| Week + formatting | `src/lib/plan/week.ts` (per-user timezone, week start), `format.ts` (WhatsApp text, swap rows, template variables). **9 tests** |
+| Area              | State                                                                                                                                                                                         |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Design doc        | Complete: flows, rules, delivery settings, templates, costs, rollout                                                                                                                          |
+| Scaffold          | Next.js 16 + TS + Tailwind + ESLint, `basePath: /projects/whatsfordinner`, git repo                                                                                                           |
+| Meal catalog      | `src/data/seedMeals.ts`: 40 dinners, tagged (base / protein / style / diet / vibe / cuisine)                                                                                                  |
+| Plan generator    | `src/lib/plan/`: deterministic, 4 rule strengths, records what it relaxed. **12 tests**                                                                                                       |
+| DB layer          | `src/lib/db/`: document types, cached Mongo client, typed collections, `ensureIndexes()`                                                                                                      |
+| Codes             | `src/lib/auth/codes.ts`: OTP + link codes, hashed, expiry/attempt/resend policy. **7 tests**                                                                                                  |
+| Bot onboarding    | `src/lib/bot/onboarding.ts`: pure state machine, name → email → OTP → diet → halal → restrictions → day rule → delivery → fallback. **14 tests**                                              |
+| WhatsApp client   | `src/lib/whatsapp/`: `WhatsAppClient` interface, Cloud API implementation, fake, payload builder (button/list/template limits), Meta error map. **11 tests**                                  |
+| Webhook plumbing  | signature check (`X-Hub-Signature-256`), subscription handshake, payload parsing for text / button / list / template replies and delivery statuses. **10 tests**                              |
+| Bot handler       | `src/lib/bot/handler.ts`: dedupe, resume onboarding, portal link codes, email-OTP verification, "welcome back" merge onto an existing account. **13 tests**, run against in-memory fakes      |
+| Stores & senders  | `BotStore` port with `MemoryBotStore` (tests) and `MongoBotStore` (real), `EmailSender` with a fake and Gmail SMTP                                                                            |
+| Webhook route     | `src/app/api/whatsapp/webhook/route.ts`: GET verify, POST signed + deduped, per-event error isolation                                                                                         |
+| Commands          | `plan`, `today`, `tomorrow`, `swap` (day list → suggestion → ✅/🔄), `settings`, `login`, `stop`/`resume`, `delete` + confirm, help. **17 tests**                                             |
+| Delivery          | `src/lib/delivery/`: cheapest-first channel choice (free window → email → opt-in paid template), admin cap + kill switch, delivery log, pending plans delivered on next message. **21 tests** |
+| Portal auth       | passwordless email-code login, session cookie (hashed token, TTL index), WhatsApp one-time login links, sign-up on first verified code                                                        |
+| Portal pages      | dashboard (week, swap, regenerate, WhatsApp connect + free-window state), preferences (delivery, region, rule builder), meals (hide/add with tags), admin (spend, cap, kill switch)           |
+| Schedule + cron   | hourly `runTick` matching each user's own timezone, weekly + daily + next-day paid fallback, `POST /api/cron/tick` behind a shared secret, `.github/workflows/deliver.yml`                    |
+| Week + formatting | `src/lib/plan/week.ts` (per-user timezone, week start), `format.ts` (WhatsApp text, swap rows, template variables). **9 tests**                                                               |
 
 | Portal logic | `src/lib/portal/forms.ts` (delivery, rules and timezone parsed from untrusted form data). **12 tests** |
 | Integration tests | real MongoDB through `mongodb-memory-server`: indexes, `MongoBotStore`, sessions, portal login, meal catalog, and a full WhatsApp sign-up end to end. **58 tests** |
@@ -85,6 +85,7 @@ Pick a display name that reads as a real service. `What's For Dinner` was declin
 `npx eslint src --max-warnings 0` is clean and `pnpm build` succeeds.
 
 Two bugs the integration tests found, both fixed here:
+
 - an unset `phone` was stored as `null`, so a second portal sign-up would have collided on the
   sparse unique index (the Mongo client now runs with `ignoreUndefined`);
 - meal ids took their suffix from `Date.now()`, so two meals added in the same millisecond hit a

@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   lint:
-    name: Lint, typecheck & repo rules
+    name: Lint, format, typecheck & repo rules
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -31,6 +31,8 @@ jobs:
         run: pnpm typecheck
       - name: ESLint
         run: pnpm lint --max-warnings 0
+      - name: Prettier
+        run: pnpm format:check
       - name: Repo rules (em dashes, env vars, action sessions, test names)
         run: pnpm check:rules
 

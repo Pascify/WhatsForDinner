@@ -63,9 +63,15 @@ export interface BotStore {
 
   /** The most recent plan that has not reached the user yet. */
   findPendingPlan(userId: string): Promise<Plan | undefined>;
-  markPlanDelivered(userId: string, weekOf: string, via: "service" | "template" | "email"): Promise<void>;
+  markPlanDelivered(
+    userId: string,
+    weekOf: string,
+    via: "service" | "template" | "email",
+  ): Promise<void>;
   /** One row per outbound message, so free vs paid stays auditable. */
-  logDelivery(entry: Omit<DeliveryDoc, "_id" | "userId" | "sentAt"> & { userId: string }): Promise<void>;
+  logDelivery(
+    entry: Omit<DeliveryDoc, "_id" | "userId" | "sentAt"> & { userId: string },
+  ): Promise<void>;
   paidBudget(): Promise<PaidBudget>;
   recordPaidSend(): Promise<void>;
   /** Active accounts set to automatic delivery; the hourly job filters these by local time. */

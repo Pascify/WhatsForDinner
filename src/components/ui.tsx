@@ -37,13 +37,23 @@ export function Input({ className = "", ...props }: ComponentProps<"input">) {
   );
 }
 
-export function Badge({ tone = "grey", children }: { tone?: "green" | "grey" | "amber"; children: ReactNode }) {
+export function Badge({
+  tone = "grey",
+  children,
+}: {
+  tone?: "green" | "grey" | "amber";
+  children: ReactNode;
+}) {
   const tones = {
     green: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200",
     amber: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200",
     grey: "bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-300",
   };
-  return <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${tones[tone]}`}>{children}</span>;
+  return (
+    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${tones[tone]}`}>
+      {children}
+    </span>
+  );
 }
 
 export function PageHeader({ title, action }: { title: string; action?: ReactNode }) {

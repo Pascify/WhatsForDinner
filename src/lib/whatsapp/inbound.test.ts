@@ -35,7 +35,10 @@ describe("verifySubscription", () => {
       "hub.verify_token": "secret-token",
       "hub.challenge": "1158201444",
     });
-    expect(verifySubscription(params, "secret-token")).toEqual({ ok: true, challenge: "1158201444" });
+    expect(verifySubscription(params, "secret-token")).toEqual({
+      ok: true,
+      challenge: "1158201444",
+    });
   });
 
   it("refuses a wrong token or a missing challenge", () => {
@@ -166,7 +169,15 @@ describe("parseWebhook", () => {
           changes: [
             {
               value: {
-                messages: [{ id: "a", from: "1", timestamp: "1790000000", type: "text", text: { body: "hi" } }],
+                messages: [
+                  {
+                    id: "a",
+                    from: "1",
+                    timestamp: "1790000000",
+                    type: "text",
+                    text: { body: "hi" },
+                  },
+                ],
                 statuses: [{ id: "b", status: "sent", timestamp: "1790000000" }],
               },
             },

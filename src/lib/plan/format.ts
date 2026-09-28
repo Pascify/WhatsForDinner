@@ -3,7 +3,8 @@ import { dayLong, dayShort, shortDate } from "./week";
 
 export type MealLookup = (mealId: string) => Meal | undefined;
 
-export const nameOf = (lookup: MealLookup, mealId: string) => lookup(mealId)?.name ?? "Something tasty";
+export const nameOf = (lookup: MealLookup, mealId: string) =>
+  lookup(mealId)?.name ?? "Something tasty";
 
 /** The whole week, as a free-form WhatsApp message. */
 export function formatPlan(plan: Plan, lookup: MealLookup): string {

@@ -31,7 +31,8 @@ if (number.error) {
   // A banned number accepts sends and returns message ids, then delivers nothing at all.
   if (number.status === "CONNECTED") ok(`status ${number.status}`);
   else bad(`status ${number.status}: nothing will be delivered`);
-  if (number.name_status !== "APPROVED") console.log(`        display name is ${number.name_status}`);
+  if (number.name_status !== "APPROVED")
+    console.log(`        display name is ${number.name_status}`);
 }
 
 console.log("\nWebhook subscription");

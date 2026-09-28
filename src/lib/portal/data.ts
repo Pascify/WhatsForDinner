@@ -135,7 +135,9 @@ async function createPortalAccount(email: string, timezone: string): Promise<str
 
 /** Burns a one-time login link sent over WhatsApp. */
 export async function consumeLoginLink(code: string): Promise<string | undefined> {
-  const claimed = await (await linkCodes()).findOneAndUpdate(
+  const claimed = await (
+    await linkCodes()
+  ).findOneAndUpdate(
     {
       codeHash: hashCode(code),
       purpose: "portal_login",
@@ -151,7 +153,9 @@ export async function consumeLoginLink(code: string): Promise<string | undefined
 export async function issueConnectCode(userId: string): Promise<string> {
   const code = generateLinkCode();
 
-  await (await linkCodes()).insertOne({
+  await (
+    await linkCodes()
+  ).insertOne({
     _id: new ObjectId(),
     codeHash: hashCode(code),
     purpose: "connect_whatsapp",
@@ -165,22 +169,19 @@ export async function issueConnectCode(userId: string): Promise<string> {
 
 /** Portal writes that are not part of the bot's own store. */
 export async function updateDelivery(userId: string, delivery: UserDoc["delivery"]): Promise<void> {
-  await (await users()).updateOne(
-    { _id: new ObjectId(userId) },
-    { $set: { delivery, updatedAt: new Date() } },
-  );
+  await (
+    await users()
+  ).updateOne({ _id: new ObjectId(userId) }, { $set: { delivery, updatedAt: new Date() } });
 }
 
 export async function updateRules(userId: string, rules: UserDoc["rules"]): Promise<void> {
-  await (await users()).updateOne(
-    { _id: new ObjectId(userId) },
-    { $set: { rules, updatedAt: new Date() } },
-  );
+  await (
+    await users()
+  ).updateOne({ _id: new ObjectId(userId) }, { $set: { rules, updatedAt: new Date() } });
 }
 
 export async function updateTimezone(userId: string, timezone: string): Promise<void> {
-  await (await users()).updateOne(
-    { _id: new ObjectId(userId) },
-    { $set: { timezone, updatedAt: new Date() } },
-  );
+  await (
+    await users()
+  ).updateOne({ _id: new ObjectId(userId) }, { $set: { timezone, updatedAt: new Date() } });
 }

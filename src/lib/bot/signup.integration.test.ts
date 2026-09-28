@@ -80,7 +80,11 @@ describe("signing up over WhatsApp, against a real database", () => {
 
     // The first plan arrives free, because they just messaged us.
     const plan = await (await mealPlans()).findOne({ userId: account!._id });
-    expect(plan).toMatchObject({ weekOf: "2026-09-21", status: "delivered", deliveredVia: "service" });
+    expect(plan).toMatchObject({
+      weekOf: "2026-09-21",
+      status: "delivered",
+      deliveredVia: "service",
+    });
     expect(lastText()).toContain("*WhatsForDinner* 🍽️");
 
     const log = await (await deliveries()).find({}).toArray();
@@ -138,7 +142,9 @@ describe("signing up over WhatsApp, against a real database", () => {
 
     // Switch them to waiting, generate another week, then have them message.
     const account = await (await users()).findOne({ phone: PHONE });
-    await (await users()).updateOne({ _id: account!._id }, { $set: { "delivery.whenClosed": "wait" } });
+    await (
+      await users()
+    ).updateOne({ _id: account!._id }, { $set: { "delivery.whenClosed": "wait" } });
 
     const nextSaturday = new Date("2026-10-03T13:00:00Z");
     expect(await runTick(deps, nextSaturday)).toMatchObject({ sent: 0, waiting: 1 });
@@ -152,7 +158,9 @@ describe("signing up over WhatsApp, against a real database", () => {
       status: "delivered",
       deliveredVia: "service",
     });
-    expect(whatsapp.texts().filter((text) => text.includes("Week of 5 Oct")).length).toBeGreaterThan(0);
+    expect(
+      whatsapp.texts().filter((text) => text.includes("Week of 5 Oct")).length,
+    ).toBeGreaterThan(0);
   });
 
   it("stops and resumes without losing the account", async () => {

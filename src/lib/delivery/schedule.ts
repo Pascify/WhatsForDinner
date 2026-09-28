@@ -27,7 +27,12 @@ export function whatIsDue(user: BotUser, now: Date): DueReason[] {
 
   // A day later, same hour: the last chance for anyone who opted into paid messages.
   const dayAfterWeekly = (weekly.weekday + 1) % 7;
-  if (weekly.enabled && whenClosed === "whatsapp" && weekday === dayAfterWeekly && hour === weekly.hour) {
+  if (
+    weekly.enabled &&
+    whenClosed === "whatsapp" &&
+    weekday === dayAfterWeekly &&
+    hour === weekly.hour
+  ) {
     due.push("paid_fallback");
   }
 
@@ -50,7 +55,13 @@ export type TickSummary = {
  */
 export async function runTick(deps: DeliveryDeps, now = new Date()): Promise<TickSummary> {
   const users = await deps.store.activeAutoUsers();
-  const summary: TickSummary = { considered: users.length, sent: 0, paid: 0, waiting: 0, failed: 0 };
+  const summary: TickSummary = {
+    considered: users.length,
+    sent: 0,
+    paid: 0,
+    waiting: 0,
+    failed: 0,
+  };
 
   for (const user of users) {
     for (const reason of whatIsDue(user, now)) {

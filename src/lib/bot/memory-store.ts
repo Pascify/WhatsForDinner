@@ -169,7 +169,10 @@ export class MemoryBotStore implements BotStore {
   }
 
   async findPendingPlan(userId: string) {
-    const key = [...this.pending].filter((entry) => entry.startsWith(`${userId}:`)).sort().at(-1);
+    const key = [...this.pending]
+      .filter((entry) => entry.startsWith(`${userId}:`))
+      .sort()
+      .at(-1);
     return key ? structuredClone(this.plans.get(key)) : undefined;
   }
 

@@ -61,7 +61,7 @@ describe("the meal catalog", () => {
     expect(added).toMatchObject({ name: "Nihari Night", tags: ["beef", "gravy"], hidden: false });
     expect(added!.id).toMatch(/^nihari-night-[0-9a-f]{4}$/);
 
-    expect((await store.mealsFor(userId))).toHaveLength(SEED_MEALS.length + 1);
+    expect(await store.mealsFor(userId)).toHaveLength(SEED_MEALS.length + 1);
   });
 
   it("keeps two meals with the same name apart", async () => {

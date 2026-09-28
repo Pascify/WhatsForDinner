@@ -68,7 +68,10 @@ describe("portal login", () => {
 
     email.reset();
     const later = new Date(Date.now() + 120_000); // past the resend cooldown
-    const second = await verifyLoginCode("cook@example.com", await codeFor("cook@example.com", later));
+    const second = await verifyLoginCode(
+      "cook@example.com",
+      await codeFor("cook@example.com", later),
+    );
 
     expect(second).toEqual(first);
     expect(await (await users()).countDocuments({ email: "cook@example.com" })).toBe(1);

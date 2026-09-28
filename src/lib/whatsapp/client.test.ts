@@ -109,15 +109,26 @@ describe("CloudApiClient", () => {
   });
 
   it("marks rate limits and server errors as worth retrying", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => jsonResponse({ error: { code: 4 } }, 400)));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => jsonResponse({ error: { code: 4 } }, 400)),
+    );
     await expect(client.send(message)).resolves.toMatchObject({ retryable: true });
 
-    vi.stubGlobal("fetch", vi.fn(async () => jsonResponse({}, 503)));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => jsonResponse({}, 503)),
+    );
     await expect(client.send(message)).resolves.toMatchObject({ retryable: true });
   });
 
   it("treats a network failure as retryable", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => { throw new Error("offline"); }));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        throw new Error("offline");
+      }),
+    );
     await expect(client.send(message)).resolves.toMatchObject({ ok: false, retryable: true });
   });
 });
@@ -136,7 +147,9 @@ describe("FakeWhatsAppClient", () => {
     const fake = new FakeWhatsAppClient();
     fake.failNext({ ok: false, error: "nope", retryable: false });
 
-    await expect(fake.send({ kind: "text", to, text: "one" })).resolves.toMatchObject({ ok: false });
+    await expect(fake.send({ kind: "text", to, text: "one" })).resolves.toMatchObject({
+      ok: false,
+    });
     await expect(fake.send({ kind: "text", to, text: "two" })).resolves.toMatchObject({ ok: true });
     expect(fake.texts()).toEqual(["two"]);
   });

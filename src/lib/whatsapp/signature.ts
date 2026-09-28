@@ -4,7 +4,11 @@ import { createHmac, timingSafeEqual } from "node:crypto";
  * Meta signs every webhook delivery with the app secret. Without this check anyone who guesses
  * the URL could drive the bot, so the raw body must be verified before it is parsed.
  */
-export function verifySignature(rawBody: string, header: string | null, appSecret: string): boolean {
+export function verifySignature(
+  rawBody: string,
+  header: string | null,
+  appSecret: string,
+): boolean {
   if (!header?.startsWith("sha256=")) return false;
 
   const expected = createHmac("sha256", appSecret).update(rawBody, "utf8").digest();

@@ -71,7 +71,7 @@ scripts/             setup-db.mts (indexes, promote an admin)
 
 Workflows, all free on this public repo:
 
-- **CI** (`ci.yml`) on every pull request and push to main. "Lint, typecheck & repo rules" and
+- **CI** (`ci.yml`) on every pull request and push to main. "Lint, format, typecheck & repo rules" and
   "Production build" run in parallel; "Tests & coverage" runs only once both pass and posts a
   coverage comment on the PR (`pnpm test:coverage`).
 - **PR checks** (`pr-checks.yml`): branch name, target is `main` or a parent `hammad-wfd/`

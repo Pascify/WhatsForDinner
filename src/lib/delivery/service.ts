@@ -37,7 +37,10 @@ export async function deliverPlan(
   deps: DeliveryDeps,
   now = new Date(),
 ): Promise<DeliveryOutcome> {
-  const [meals, budget] = await Promise.all([deps.store.mealsFor(user.id), deps.store.paidBudget()]);
+  const [meals, budget] = await Promise.all([
+    deps.store.mealsFor(user.id),
+    deps.store.paidBudget(),
+  ]);
   const lookup = lookupFor(meals);
 
   let decision = decideChannel({
@@ -71,7 +74,15 @@ export async function deliverPlan(
           : "Tonight's dinner",
       text: bodyFor(plan, kind, now, user, lookup),
     });
-    return finish(user, plan, kind, deps, decision, result.ok, result.ok ? undefined : result.error);
+    return finish(
+      user,
+      plan,
+      kind,
+      deps,
+      decision,
+      result.ok,
+      result.ok ? undefined : result.error,
+    );
   }
 
   if (decision.channel === "whatsapp_template" && user.phone) {
@@ -89,7 +100,15 @@ export async function deliverPlan(
     });
 
     if (result.ok) await deps.store.recordPaidSend();
-    return finish(user, plan, kind, deps, decision, result.ok, result.ok ? undefined : result.error);
+    return finish(
+      user,
+      plan,
+      kind,
+      deps,
+      decision,
+      result.ok,
+      result.ok ? undefined : result.error,
+    );
   }
 
   return finish(user, plan, kind, deps, decision, false);

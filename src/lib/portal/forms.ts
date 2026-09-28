@@ -21,13 +21,17 @@ const readWeekday = (value: unknown, fallback: Weekday): Weekday => {
  * Builds delivery settings from the preferences form. Opting into paid messages records when
  * and where consent was given, which Meta requires before any business-initiated message.
  */
-export function readDeliveryForm(form: FormData, current: DeliverySettings, now = new Date()): DeliverySettings {
+export function readDeliveryForm(
+  form: FormData,
+  current: DeliverySettings,
+  now = new Date(),
+): DeliverySettings {
   const mode = form.get("mode") === "auto" ? "auto" : "on_request";
   const what = String(form.get("what") ?? "weekly");
   const requested = String(form.get("whenClosed") ?? "email");
-  const whenClosed = (["wait", "email", "whatsapp"].includes(requested)
-    ? requested
-    : "email") as DeliverySettings["whenClosed"];
+  const whenClosed = (
+    ["wait", "email", "whatsapp"].includes(requested) ? requested : "email"
+  ) as DeliverySettings["whenClosed"];
 
   const delivery: DeliverySettings = {
     ...current,
@@ -47,7 +51,8 @@ export function readDeliveryForm(form: FormData, current: DeliverySettings, now 
 
   if (whenClosed === "whatsapp") {
     delivery.paidOptInAt = current.whenClosed === "whatsapp" ? current.paidOptInAt : now;
-    delivery.paidOptInSource = current.whenClosed === "whatsapp" ? current.paidOptInSource : "portal";
+    delivery.paidOptInSource =
+      current.whenClosed === "whatsapp" ? current.paidOptInSource : "portal";
   } else {
     delete delivery.paidOptInAt;
     delete delivery.paidOptInSource;

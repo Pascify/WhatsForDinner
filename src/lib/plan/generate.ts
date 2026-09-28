@@ -21,7 +21,9 @@ export function addDays(iso: string, days: number): string {
 }
 
 function daysBetween(fromIso: string, toIso: string): number {
-  return Math.round((Date.parse(`${toIso}T00:00:00Z`) - Date.parse(`${fromIso}T00:00:00Z`)) / DAY_MS);
+  return Math.round(
+    (Date.parse(`${toIso}T00:00:00Z`) - Date.parse(`${fromIso}T00:00:00Z`)) / DAY_MS,
+  );
 }
 
 function weekdayOf(iso: string): Weekday {
@@ -144,8 +146,7 @@ export function generatePlan(input: GenerateInput): Plan {
     });
 
     const weights = candidates.map(
-      (meal) =>
-        recencyWeight(meal, history, date, repeatGapDays) * preferenceWeight(meal, rules),
+      (meal) => recencyWeight(meal, history, date, repeatGapDays) * preferenceWeight(meal, rules),
     );
     const picked = weightedPick(candidates, weights, rng) ?? candidates[0];
 
@@ -230,9 +231,7 @@ function fillMinimums(args: {
         const meal = pool.find((candidate) => candidate.id === day.mealId);
         return meal ? !hasAll(meal, rule.tags) : false;
       });
-      const replacement = pool.find(
-        (meal) => hasAll(meal, rule.tags) && !usedIds.has(meal.id),
-      );
+      const replacement = pool.find((meal) => hasAll(meal, rule.tags) && !usedIds.has(meal.id));
 
       if (!swappable || !replacement) {
         relaxations.push({

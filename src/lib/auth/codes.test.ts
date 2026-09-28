@@ -49,9 +49,9 @@ describe("codes", () => {
 
   it("rejects wrong, expired, reused and over-tried codes", () => {
     expect(checkCode(record(), "000000", now)).toEqual({ ok: false, reason: "wrong_code" });
-    expect(checkCode(record({ expiresAt: new Date("2026-09-23T12:00:00Z") }), "123456", now)).toEqual(
-      { ok: false, reason: "expired" },
-    );
+    expect(
+      checkCode(record({ expiresAt: new Date("2026-09-23T12:00:00Z") }), "123456", now),
+    ).toEqual({ ok: false, reason: "expired" });
     expect(checkCode(record({ consumedAt: now }), "123456", now)).toEqual({
       ok: false,
       reason: "already_used",
