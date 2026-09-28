@@ -17,10 +17,11 @@ review was requested the same day. Nothing in the codebase is known to be broken
 | Domain note    | The bare domain redirects into the base path. `pascify.vercel.app` was taken, hence the doubled name         |
 | Database       | MongoDB Atlas M0, Mumbai. Network access `0.0.0.0/0`, which production needs                                 |
 | Email          | Gmail SMTP as `whatsfordinnersupport@gmail.com`, app password in Vercel                                      |
+| Deploys        | `.github/workflows/deploy.yml` with a Vercel token; the Vercel GitHub app is disconnected                    |
 | Env vars       | All set in Vercel Production and mirrored in `.env.prod` (`.env.local` is for local development)             |
 | Meta webhook   | Callback URL verified, `messages` field subscribed, app subscribed to the WABA                               |
 | Meta account   | **Disabled.** Test number `+1 555-156-2911` reports `status: BANNED`                                         |
-| GitHub secrets | **Not set yet**: `MONGODB_URI`, `APP_URL`, `CRON_SECRET`. The hourly workflow cannot run without them        |
+| GitHub secrets | All set: `MONGODB_URI`, `APP_URL`, `CRON_SECRET`, `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`       |
 
 Run `pnpm doctor` to see all of this in one command: number status, app subscription, and
 whether production can reach the database.

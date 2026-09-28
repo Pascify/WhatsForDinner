@@ -45,15 +45,26 @@ Templates are not needed yet. They only matter once someone turns on the paid fa
 
 ## 5. Deploy to Vercel
 
-1. Import the repo at vercel.com. It is a standard Next.js project, no settings to change.
-2. Add every variable from `.env.example` under **Settings > Environment Variables**, for
+Deploys run from `.github/workflows/deploy.yml` with a Vercel token, not the Vercel GitHub app.
+The app links one GitHub login to one Vercel account, which breaks when the same GitHub login
+owns projects in two Vercel accounts. Production deploys on a push to main, previews on PRs.
+
+1. Create the project at vercel.com without importing a Git repo (or, if it was imported,
+   **Settings > Git > Disconnect**). It is a standard Next.js project, no settings to change.
+2. Add three repository secrets under **Settings > Secrets and variables > Actions**:
+   - `VERCEL_TOKEN`: **Account Settings > Tokens**, scoped to the account that owns the project
+   - `VERCEL_ORG_ID`: the team ID from **Team Settings > General** (or the user ID on a
+     personal account)
+   - `VERCEL_PROJECT_ID`: from the project's **Settings > General**
+3. Add every variable from `.env.example` under **Settings > Environment Variables**, for
    Production. Generate the two secrets with `openssl rand -base64 32`:
    - `CODE_PEPPER`, which hashes one-time codes
    - `CRON_SECRET`, shared with the GitHub Actions workflow
-3. Set `APP_URL` to the deployment URL, for example
+4. Set `APP_URL` to the deployment URL, for example
    `https://what-s-for-dinner.vercel.app/projects/whatsfordinner`. The path matters: the app
    runs under `basePath: /projects/whatsfordinner`.
-4. Deploy, then create the indexes once, locally, against the same database:
+5. Run the **Deploy** workflow from the Actions tab, then create the indexes once, locally,
+   against the same database:
 
 ```bash
 cp .env.example .env.prod         # fill it in with the same values
