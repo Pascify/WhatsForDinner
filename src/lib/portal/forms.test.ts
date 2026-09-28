@@ -119,6 +119,16 @@ describe("readRuleForm", () => {
     });
   });
 
+  it("reads how often from the builder", () => {
+    const quota = (how: string, times: string) =>
+      readRuleForm(form({ kind: "quota", tags: "chicken", how, times }));
+
+    expect(quota("at_most", "2")).toEqual({ kind: "quota", tags: ["chicken"], max: 2 });
+    expect(quota("at_least", "1")).toEqual({ kind: "quota", tags: ["chicken"], min: 1 });
+    expect(quota("exactly", "3")).toEqual({ kind: "quota", tags: ["chicken"], min: 3, max: 3 });
+    expect(quota("at_most", "9")).toBeUndefined();
+  });
+
   it("ignores tags that are not in the vocabulary", () => {
     expect(readTags(["chicken", "unicorn", "rice"])).toEqual(["chicken", "rice"]);
     expect(readRuleForm(form({ kind: "never", tags: "unicorn" }))).toBeUndefined();
