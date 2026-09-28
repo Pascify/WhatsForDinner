@@ -14,6 +14,7 @@ export class MemoryBotStore implements BotStore {
     { codeHash: string; attempts: number; expiresAt: Date; createdAt: Date; purpose: OtpPurpose }
   >();
   private seen = new Set<string>();
+  private counters = new Map<string, number>();
   private plans = new Map<string, Plan>();
   private history = new Map<string, History>();
   /** Meals added by a user, on top of the seeded catalog. */
@@ -58,6 +59,10 @@ export class MemoryBotStore implements BotStore {
   }
 
   async createUser(data: { phone?: string; channel: "portal" | "whatsapp" }) {
+    // Checked synchronously, like the unique index, so parallel callers cannot both pass.
+    if (data.phone && [...this.users.values()].some((user) => user.phone === data.phone)) {
+      throw new Error(`duplicate phone ${data.phone}`);
+    }
     const user = this.seedUser({
       phone: data.phone,
       onboarding: { step: "ask_name", draft: emptyDraft() },
@@ -67,7 +72,9 @@ export class MemoryBotStore implements BotStore {
 
   async saveOnboarding(userId: string, onboarding: BotUser["onboarding"]) {
     const user = this.users.get(userId);
-    if (user) user.onboarding = onboarding;
+    if (!user || (user.onboarding.rev ?? 0) !== (onboarding.rev ?? 0)) return false;
+    user.onboarding = { ...onboarding, rev: (onboarding.rev ?? 0) + 1 };
+    return true;
   }
 
   async finishOnboarding(userId: string, draft: OnboardingDraft) {
@@ -130,6 +137,12 @@ export class MemoryBotStore implements BotStore {
     if (this.seen.has(messageId)) return true;
     this.seen.add(messageId);
     return false;
+  }
+
+  async bumpCounter(key: string) {
+    const count = (this.counters.get(key) ?? 0) + 1;
+    this.counters.set(key, count);
+    return count;
   }
 
   async mealsFor(userId: string) {

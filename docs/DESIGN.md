@@ -88,6 +88,7 @@ Second option: **Log in with WhatsApp**: page shows a code, user sends it, bot a
    4. onboarding basics (diet, halal, never-eat, 1-2 day rules)
    5. delivery setting (§5)
    6. first plan sent: free, window is open
+   - typing `r` at any step starts over from the name, with an empty draft
 
 ### B. Portal first
 
@@ -207,15 +208,19 @@ promotional tone risks re-categorisation to Marketing.
   Hourly because users span timezones; Vercel Hobby cron is daily-only. Note: scheduled workflows
   are disabled after 60 days of repo inactivity: needs a keepalive.
 - **Webhook** `/api/whatsapp/webhook`: `GET` verify token; `POST` verifies `X-Hub-Signature-256`,
-  dedupes by message id, routes: portal code → join code → OTP → onboarding step → pending plan →
-  command. Meta calls the project's own `.vercel.app` URL directly, not the portfolio domain.
+  dedupes by message id, drops messages older than 5 minutes (a backlog Meta replays after an
+  outage or a number coming back is not a live chat), rate limits per phone (15 a minute, 100 an
+  hour: one warning, then silence, so a flood never turns into a flood of replies that gets the
+  number reported), then routes: portal code → join code → OTP → onboarding step → pending plan →
+  command. Onboarding saves carry a `rev`, so parallel deliveries for one user cannot both
+  advance the same step: the losing request stays quiet. Meta calls the project's own `.vercel.app` URL directly, not the portfolio domain.
 - **Email**: Gmail SMTP (dedicated account + app password) for OTP, plan delivery, reminders.
 
 ### Collections
 
 `users`, `meals`, `mealPlans` (+`status`, `deliveredVia`, unique index on user+weekOf),
 `mealHistory`, `recipients`, `deliveries` (free/paid log), `settings` (admin), plus TTL collections
-`otpCodes`, `linkCodes`, `processedMessages`, and Better Auth's session tables.
+`otpCodes`, `linkCodes`, `processedMessages`, `rateCounters`, and Better Auth's session tables.
 
 ---
 

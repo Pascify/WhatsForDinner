@@ -31,9 +31,13 @@ beforeEach(async () => {
   await clearCollections();
   whatsapp = new FakeWhatsAppClient();
   email = new FakeEmailSender();
-  deps = { store: new MongoBotStore(), whatsapp, email };
+  clock = NOW;
+  // Each message is handled the moment it is sent, so none of them count as a stale backlog.
+  deps = { store: new MongoBotStore(), whatsapp, email, now: () => clock };
   counter = 0;
 });
+
+let clock = NOW;
 
 const event = (text: string, replyId?: string, at = NOW): InboundEvent => ({
   type: "message",
@@ -44,8 +48,10 @@ const event = (text: string, replyId?: string, at = NOW): InboundEvent => ({
   replyId,
 });
 
-const say = (text: string, replyId?: string, at?: Date) =>
-  handleInbound(event(text, replyId, at), deps);
+const say = (text: string, replyId?: string, at = NOW) => {
+  clock = at;
+  return handleInbound(event(text, replyId, at), deps);
+};
 const lastText = () => whatsapp.texts().at(-1) ?? "";
 
 /** Signs up the way a real person would, one WhatsApp message at a time. */

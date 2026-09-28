@@ -59,6 +59,8 @@ export const emptyDraft = (): OnboardingDraft => ({
   delivery: structuredClone(DEFAULT_DELIVERY),
 });
 
+const RESTART = /^(r|restart)$/i;
+
 const isEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value.trim());
 
 export function parseRestrictions(text: string): Tag[] {
@@ -74,7 +76,11 @@ export function parseRestrictions(text: string): Tag[] {
 export function startOnboarding(): StepResult {
   return {
     state: { step: "ask_name", draft: emptyDraft() },
-    messages: [message("Welcome to WhatsForDinner 🍽️\n\nWhat should I call you?")],
+    messages: [
+      message(
+        "Welcome to WhatsForDinner 🍽️\n\nWhat should I call you?\n\n_Type *r* at any point to start over._",
+      ),
+    ],
     effects: [],
   };
 }
@@ -176,6 +182,14 @@ export function advanceOnboarding(
     effects,
   });
 
+  if (!reply && RESTART.test(text)) {
+    return {
+      state: { step: "ask_name", draft: emptyDraft() },
+      messages: [message("Starting over. What should I call you?")],
+      effects: [],
+    };
+  }
+
   switch (state.step) {
     case "ask_name": {
       if (!text) return stay(message("What should I call you?"));
@@ -185,7 +199,9 @@ export function advanceOnboarding(
 
     case "ask_email": {
       if (!isEmail(text)) {
-        return stay(message("That doesn't look like an email address. Try again?"));
+        return stay(
+          message("That doesn't look like an email address. Try again, or type *r* to start over."),
+        );
       }
       draft.email = text.toLowerCase();
       return goto(

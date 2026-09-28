@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  emptyDraft,
   advanceOnboarding,
   parseRestrictions,
   startOnboarding,
@@ -73,6 +74,17 @@ describe("onboarding", () => {
     expect(state.step).toBe("ask_email");
     expect(effects).toHaveLength(0);
     expect(last.messages[0].text).toMatch(/doesn't look like an email/);
+  });
+
+  it("starts over from any step when the user types r", () => {
+    const { state, last } = converse([
+      { input: { text: "Hammad" } },
+      { input: { text: "cook@example.com" } },
+      { input: { text: "R" } },
+    ]);
+
+    expect(state).toEqual({ step: "ask_name", draft: emptyDraft() });
+    expect(last.messages[0].text).toMatch(/Starting over/);
   });
 
   it("stays on the code step until the code is right", () => {

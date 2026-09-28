@@ -18,7 +18,8 @@ export type BotUser = {
   phone?: string;
   emailVerifiedAt?: Date;
   status: "active" | "inactive";
-  onboarding: { step: OnboardingStep; draft: OnboardingDraft };
+  /** `rev` counts saves, so a stale read cannot overwrite a newer step. */
+  onboarding: { step: OnboardingStep; draft: OnboardingDraft; rev?: number };
   rules: Rule[];
   delivery: DeliverySettings;
   lastInboundAt?: Date;
@@ -33,8 +34,13 @@ export type BotUser = {
 export interface BotStore {
   findUserByPhone(phone: string): Promise<BotUser | undefined>;
   findUserByEmail(email: string): Promise<BotUser | undefined>;
+  /** Throws when the phone already has an account, like the unique index does. */
   createUser(data: { phone?: string; channel: "portal" | "whatsapp" }): Promise<BotUser>;
-  saveOnboarding(userId: string, onboarding: BotUser["onboarding"]): Promise<void>;
+  /**
+   * Saves only if `onboarding.rev` still matches what is stored, and bumps it. False means a
+   * parallel delivery for the same user got there first.
+   */
+  saveOnboarding(userId: string, onboarding: BotUser["onboarding"]): Promise<boolean>;
   finishOnboarding(userId: string, draft: OnboardingDraft): Promise<void>;
   linkPhone(userId: string, phone: string): Promise<void>;
   touchInbound(userId: string, at: Date): Promise<void>;
@@ -50,6 +56,8 @@ export interface BotStore {
 
   /** True when this webhook message was already handled; Meta retries deliveries. */
   seenMessage(messageId: string): Promise<boolean>;
+  /** Adds one to a counter that disappears at `expiresAt`, and returns the new count. */
+  bumpCounter(key: string, expiresAt: Date): Promise<number>;
 
   /** The seeded catalog plus this user's own meals, minus the ones they hid. */
   mealsFor(userId: string): Promise<Meal[]>;

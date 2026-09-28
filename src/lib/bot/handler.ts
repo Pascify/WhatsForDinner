@@ -8,6 +8,7 @@ import { parseCommand } from "./commands";
 import { deliverPending, deliverPlan } from "@/lib/delivery/service";
 import { advanceOnboarding, startOnboarding, type StepOutcome } from "./onboarding";
 import { ensurePlan, runCommand } from "./run-command";
+import { rateKeys, rateVerdict } from "./rate-limit";
 import { localDateISO, startOfWeek } from "@/lib/plan/week";
 import { WEEK_STARTS_ON } from "./run-command";
 import type { BotStore, BotUser } from "./store";
@@ -18,6 +19,9 @@ export type BotDeps = {
   email: EmailSender;
   now?: () => Date;
 };
+
+/** Older than this is a backlog Meta replayed (an outage, a number coming back), not a chat. */
+export const STALE_AFTER_MS = 5 * 60_000;
 
 const OTP_SUBJECT = "Your WhatsForDinner code";
 const otpBody = (code: string) =>
@@ -46,8 +50,23 @@ export async function handleInbound(event: InboundEvent, deps: BotDeps): Promise
   if (event.type !== "message") return;
   if (await deps.store.seenMessage(event.messageId)) return;
 
-  const now = event.at ?? deps.now?.() ?? new Date();
+  const clock = deps.now?.() ?? new Date();
+  if (event.at && clock.getTime() - event.at.getTime() > STALE_AFTER_MS) return;
+
+  const now = event.at ?? clock;
   const phone = event.from;
+
+  const counts = await Promise.all(
+    rateKeys(phone, clock).map(({ key, expiresAt }) => deps.store.bumpCounter(key, expiresAt)),
+  );
+  const verdict = rateVerdict(counts);
+  if (verdict === "drop") return;
+  if (verdict === "warn") {
+    await reply(deps, phone, [
+      message("That's a lot of messages at once. Give me a few minutes and try again."),
+    ]);
+    return;
+  }
   const user = await deps.store.findUserByPhone(phone);
 
   if (!user) {
@@ -108,10 +127,15 @@ async function handleUnknownNumber(
     return;
   }
 
-  const created = await deps.store.createUser({ phone, channel: "whatsapp" });
-  const { state, messages } = startOnboarding();
-  await deps.store.saveOnboarding(created.id, state);
-  await reply(deps, phone, messages);
+  // A new account already starts at the first step, so there is nothing to save here.
+  try {
+    await deps.store.createUser({ phone, channel: "whatsapp" });
+  } catch (error) {
+    // A parallel delivery from the same number created it first and sent the welcome.
+    if (await deps.store.findUserByPhone(phone)) return;
+    throw error;
+  }
+  await reply(deps, phone, startOnboarding().messages);
 }
 
 /** Runs one onboarding step, including the database work its effects ask for. */
@@ -130,7 +154,12 @@ async function continueOnboarding(
     outcome,
   );
 
-  await deps.store.saveOnboarding(user.id, result.state);
+  // Two deliveries read the same step in parallel: only the first save counts, the other stays quiet.
+  const saved = await deps.store.saveOnboarding(user.id, {
+    ...result.state,
+    rev: user.onboarding.rev,
+  });
+  if (!saved) return;
 
   for (const effect of result.effects) {
     if (effect.kind === "send_email_otp") {
