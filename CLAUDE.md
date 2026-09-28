@@ -88,6 +88,14 @@ Workflows, all free on this public repo:
 session, and test files named for the suite they belong to. Add a rule there whenever one of
 these conventions gets broken.
 
+## Environments
+
+- `.env.prod` holds the live values: `pnpm doctor`, `preflight` and `setup-db:prod` read it.
+- `.env.local` is local only: `pnpm dev:local` starts a MongoDB on this machine (data in
+  `.data/`), creates the indexes and runs `next dev`. Without Gmail set, login codes print in
+  the terminal. Next also loads `.env.local` for plain `pnpm dev`, so it must never hold live values.
+- Neither is committed (`.env*` is ignored). Only `.env.example` is.
+
 ## Tests
 
 - `pnpm test` runs everything. `pnpm test:watch` while working.

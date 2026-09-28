@@ -56,8 +56,8 @@ Templates are not needed yet. They only matter once someone turns on the paid fa
 4. Deploy, then create the indexes once, locally, against the same database:
 
 ```bash
-cp .env.example .env.local   # fill it in with the same values
-pnpm setup-db your@email.com # creates indexes, and makes that account an admin once it exists
+cp .env.example .env.prod         # fill it in with the same values
+pnpm setup-db:prod your@email.com # creates indexes, and makes that account an admin once it exists
 ```
 
 ## 6. Point Meta at the webhook

@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:local": "tsx --env-file=.env.local scripts/dev-local.mts",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -13,13 +14,14 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "setup-db": "tsx --env-file-if-exists=.env.local scripts/setup-db.mts",
+    "setup-db:prod": "tsx --env-file=.env.prod scripts/setup-db.mts",
     "typecheck": "next typegen && tsc --noEmit",
     "test:unit": "vitest run --project node --exclude '**/*.integration.test.ts' --exclude '**/node_modules/**'",
     "test:integration": "vitest run integration",
     "test:dom": "vitest run --project dom",
-    "preflight": "tsx --env-file-if-exists=.env.local scripts/preflight.mts",
+    "preflight": "tsx --env-file=.env.prod scripts/preflight.mts",
     "check:rules": "tsx scripts/check-rules.mts",
-    "doctor": "tsx --env-file-if-exists=.env.local scripts/doctor.mts"
+    "doctor": "tsx --env-file=.env.prod scripts/doctor.mts"
   },
   "dependencies": {
     "mongodb": "^7.6.0",
