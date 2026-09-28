@@ -89,6 +89,23 @@ describe("onboarding", () => {
     expect(right.state.step).toBe("ask_diet");
   });
 
+  it("sends a fresh code on resend, unless one just went out", () => {
+    const start = converse([
+      { input: { text: "Hammad" } },
+      { input: { text: "cook@example.com" } },
+    ]);
+
+    const resent = advanceOnboarding(start.state, { text: "Resend" });
+    expect(resent.state.step).toBe("verify_email");
+    expect(resent.effects).toEqual([{ kind: "send_email_otp", email: "cook@example.com" }]);
+    expect(resent.messages[0].text).toMatch(/Sent again to cook@example.com/);
+
+    const tooSoon = advanceOnboarding(start.state, { text: "resend" }, { resendTooSoon: true });
+    expect(tooSoon.state.step).toBe("verify_email");
+    expect(tooSoon.effects).toHaveLength(0);
+    expect(tooSoon.messages[0].text).toMatch(/Give it a minute/);
+  });
+
   it("lets someone correct a mistyped email", () => {
     const start = converse([
       { input: { text: "Hammad" } },

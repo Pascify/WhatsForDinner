@@ -152,7 +152,7 @@ export class MongoBotStore implements BotStore {
     };
   }
 
-  async issueOtp(email: string, purpose: OtpPurpose) {
+  async issueOtp(email: string, purpose: OtpPurpose, now = new Date()) {
     const code = generateOtp();
     await (
       await otpCodes()
@@ -162,13 +162,20 @@ export class MongoBotStore implements BotStore {
       codeHash: hashCode(code),
       purpose,
       attempts: 0,
-      expiresAt: new Date(Date.now() + OTP_TTL_MS),
-      createdAt: new Date(),
+      expiresAt: new Date(now.getTime() + OTP_TTL_MS),
+      createdAt: now,
     });
     return code;
   }
 
-  async checkOtp(email: string, code: string) {
+  async lastOtpAt(email: string, purpose: OtpPurpose) {
+    const latest = await (
+      await otpCodes()
+    ).findOne({ email: email.toLowerCase(), purpose }, { sort: { createdAt: -1 } });
+    return latest?.createdAt;
+  }
+
+  async checkOtp(email: string, code: string, now = new Date()) {
     const collection = await otpCodes();
     const record = await collection.findOne(
       { email: email.toLowerCase(), consumedAt: { $exists: false } },
@@ -176,10 +183,10 @@ export class MongoBotStore implements BotStore {
     );
     if (!record) return { ok: false as const, reason: "expired" as const };
 
-    const result = checkCode(record, code);
+    const result = checkCode(record, code, now);
     await collection.updateOne(
       { _id: record._id },
-      result.ok ? { $set: { consumedAt: new Date() } } : { $inc: { attempts: 1 } },
+      result.ok ? { $set: { consumedAt: now } } : { $inc: { attempts: 1 } },
     );
     return result;
   }

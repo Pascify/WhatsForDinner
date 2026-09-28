@@ -103,6 +103,27 @@ describe("handleInbound", () => {
     expect(lastText()).toMatch(/Do you eat meat/);
   });
 
+  it("emails a second code on resend, once the cooldown has passed", async () => {
+    await say("Hi");
+    await say("Hammad");
+    await say("cook@example.com");
+    expect(email.sent).toHaveLength(1);
+
+    // Same timestamp as the first send, so still inside the one minute cooldown.
+    await say("resend");
+    expect(email.sent).toHaveLength(1);
+    expect(lastText()).toMatch(/Give it a minute/);
+
+    const later = new Date("2026-09-26T12:01:30Z");
+    await handleInbound({ ...incoming("resend"), at: later }, deps);
+    expect(email.sent).toHaveLength(2);
+    expect(email.sent[1].to).toBe("cook@example.com");
+    expect(lastText()).toMatch(/Sent again to cook@example.com/);
+
+    await handleInbound({ ...incoming(email.lastCode()!), at: later }, deps);
+    expect(lastText()).toMatch(/Do you eat meat/);
+  });
+
   it("records when the user last messaged, which is what keeps sending free", async () => {
     await say("Hi");
     await say("Hammad");

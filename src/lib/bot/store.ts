@@ -43,8 +43,10 @@ export interface BotStore {
   consumeLinkCode(code: string): Promise<{ userId: string; purpose: LinkCodePurpose } | undefined>;
 
   /** Stores a hashed one-time code and hands back the plain one to email. */
-  issueOtp(email: string, purpose: OtpPurpose): Promise<string>;
-  checkOtp(email: string, code: string): Promise<CodeCheck>;
+  issueOtp(email: string, purpose: OtpPurpose, now?: Date): Promise<string>;
+  /** When the newest code for this email went out, for the resend cooldown. */
+  lastOtpAt(email: string, purpose: OtpPurpose): Promise<Date | undefined>;
+  checkOtp(email: string, code: string, now?: Date): Promise<CodeCheck>;
 
   /** True when this webhook message was already handled; Meta retries deliveries. */
   seenMessage(messageId: string): Promise<boolean>;

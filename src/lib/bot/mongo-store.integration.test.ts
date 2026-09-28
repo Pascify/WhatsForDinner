@@ -89,6 +89,16 @@ describe("MongoBotStore", () => {
       expect(await store.checkOtp("cook@example.com", code)).toMatchObject({ ok: false });
     });
 
+    it("reports when the newest code for the email went out", async () => {
+      const first = new Date("2026-09-26T12:00:00Z");
+      const second = new Date("2026-09-26T12:01:30Z");
+      await store.issueOtp("resend@example.com", "signup", first);
+      await store.issueOtp("resend@example.com", "signup", second);
+
+      expect(await store.lastOtpAt("Resend@example.com", "signup")).toEqual(second);
+      expect(await store.lastOtpAt("resend@example.com", "login")).toBeUndefined();
+    });
+
     it("counts wrong attempts and locks after five", async () => {
       const code = await store.issueOtp("cook@example.com", "signup");
 
