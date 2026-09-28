@@ -7,14 +7,52 @@ on:
     - cron: "7 * * * *"
   workflow_dispatch:
 
+# A manual run landing on top of the scheduled one would send the same plan twice.
+concurrency:
+  group: deliver
+  cancel-in-progress: false
+
+permissions:
+  actions: write
+
 jobs:
   tick:
+    name: Send due plans
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      - name: Call the delivery endpoint
+      - name: Check the secrets are set
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
-          response=$(curl --silent --show-error --fail-with-body \
+          missing=0
+          for name in APP_URL CRON_SECRET; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Repository secret $name is not set. See docs/DEPLOY.md, step 5."
+              missing=1
+            fi
+          done
+          exit $missing
+
+      - name: Call the delivery endpoint
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl --silent --show-error --fail-with-body \
             --max-time 60 \
-            --request POST "${{ secrets.APP_URL }}/api/cron/tick" \
-            --header "Authorization: Bearer ${{ secrets.CRON_SECRET }}")
-          echo "$response"
+            --request POST "${APP_URL%/}/api/cron/tick" \
+            --header "Authorization: Bearer $CRON_SECRET"
+          echo
+
+      # GitHub disables scheduled workflows after 60 days without repository activity.
+      # Re-enabling through the API resets that clock without a dummy commit.
+      - name: Keep the schedule alive
+        if: github.event_name == 'schedule' && always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "$(date -u +%H)" = "00" ]; then
+            gh api --method PUT "repos/${{ github.repository }}/actions/workflows/deliver.yml/enable"
+          fi

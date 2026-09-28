@@ -109,9 +109,8 @@ Two bugs the integration tests found, both fixed here:
 - **Delivery status callbacks** are parsed (including Meta's `billable` flag) but not yet written to
   the `deliveries` log. That happens with the delivery service.
 - **Join codes for recipients** are recognised by the same link-code path but have no flow yet.
-- **Cron double-runs.** An hourly schedule means one attempt per scheduled hour. A manual
-  `workflow_dispatch` inside the same hour could send twice; a `lastRunAt` guard would fix it.
-- **GitHub disables scheduled workflows** after 60 days without repo activity. Needs a keepalive.
+- **Cron double-runs.** Overlapping runs now queue behind a `concurrency` group, but a manual
+  `workflow_dispatch` later in the same hour could still send twice; a `lastRunAt` guard would fix it.
 - **Delivery of bot replies is fire and forget** beyond the send call: a refused send now throws
   and is reported, but there is no retry.
 
