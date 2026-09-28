@@ -69,11 +69,15 @@ scripts/             setup-db.mts (indexes, promote an admin)
 
 ## CI
 
-Three workflows, all free on this repo:
+Workflows, all free on this public repo:
 
-- **CI** (`ci.yml`) on every pull request and push to main: `typecheck`, `lint`, `check:rules`,
-  the whole test suite and a production build. On pull requests it also checks the branch name
-  and that no commit carries a co-author trailer or an em dash.
+- **CI** (`ci.yml`) on every pull request and push to main. "Lint, typecheck & repo rules" and
+  "Production build" run in parallel; "Tests & coverage" runs only once both pass and posts a
+  coverage comment on the PR (`pnpm test:coverage`).
+- **PR checks** (`pr-checks.yml`): branch name, target is `main` or a parent `hammad-wfd/`
+  branch, and no commit or title carries a co-author trailer or an em dash.
+- **Git Town** (`git-town.yml`) draws the branch stack into the PR description.
+- **Labeler** (`labeler.yml`, rules in `.github/labeler.yml`) labels a PR by the areas it touches.
 - **Database indexes** (`indexes.yml`) on a push to main that touches `src/lib/db/**` or the
   setup script, and on demand. Runs `pnpm setup-db` against production with the `MONGODB_URI`
   repository secret. Index creation is idempotent, so re-running is safe.

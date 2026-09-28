@@ -1,0 +1,71 @@
+name: PR checks
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  branch:
+    name: Branch name & target
+    runs-on: ubuntu-latest
+    steps:
+      - name: Branch name follows hammad-wfd/<description>
+        env:
+          HEAD: ${{ github.head_ref }}
+        run: |
+          if [[ ! "$HEAD" =~ ^hammad-wfd/[a-z0-9._-]+$ ]]; then
+            echo "::error::Branch '$HEAD' should look like hammad-wfd/short-description"
+            exit 1
+          fi
+
+      # Stacked PRs target their parent branch; anything else is a mistake.
+      - name: Targets main or a parent in the stack
+        env:
+          BASE: ${{ github.base_ref }}
+        run: |
+          if [[ "$BASE" != "main" && ! "$BASE" =~ ^hammad-wfd/ ]]; then
+            echo "::error::PR targets '$BASE'. Point it at main, or at its parent hammad-wfd/ branch."
+            exit 1
+          fi
+
+  commits:
+    name: Commit messages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: No co-author trailer and no em dash
+        env:
+          BASE: ${{ github.base_ref }}
+        run: |
+          # The base branch is not checked out by default, so fetch just its tip.
+          git fetch --depth=1 origin "$BASE"
+          range="FETCH_HEAD..HEAD"
+          failed=0
+
+          if git log "$range" --format=%B | grep -qi "^Co-Authored-By:"; then
+            echo "::error::A commit message carries a Co-Authored-By trailer:"
+            git log "$range" --format="  %h %s" -i --grep="^Co-Authored-By:"
+            failed=1
+          fi
+
+          if git log "$range" --format=%B | grep -q $'\u2014'; then
+            echo "::error::A commit message contains an em dash. Use a comma, colon or hyphen."
+            failed=1
+          fi
+
+          exit $failed
+
+      - name: PR title has no em dash
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          if [[ "$TITLE" == *$'\u2014'* ]]; then
+            echo "::error::The PR title contains an em dash."
+            exit 1
+          fi
