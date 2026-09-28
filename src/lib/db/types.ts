@@ -54,6 +54,8 @@ export type UserDoc = {
     step: OnboardingStep;
     channel: "portal" | "whatsapp";
     draft?: Record<string, unknown>;
+    /** Bumped on every save; a write that read an older value is refused. */
+    rev?: number;
   };
   rules: Rule[];
   repeatGapDays?: number;
@@ -139,6 +141,14 @@ export type LinkCodeDoc = {
 export type ProcessedMessageDoc = {
   _id: ObjectId;
   messageId: string;
+  expiresAt: Date;
+};
+
+/** Inbound messages from one phone in one time window, for the reply rate limit. */
+export type RateCounterDoc = {
+  /** `<phone>:<window>:<window index>` */
+  _id: string;
+  count: number;
   expiresAt: Date;
 };
 

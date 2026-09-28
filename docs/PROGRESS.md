@@ -55,26 +55,26 @@ Pick a display name that reads as a real service. `What's For Dinner` was declin
 
 ## Done
 
-| Area              | State                                                                                                                                                                                         |
-| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Design doc        | Complete: flows, rules, delivery settings, templates, costs, rollout                                                                                                                          |
-| Scaffold          | Next.js 16 + TS + Tailwind + ESLint, `basePath: /projects/whatsfordinner`, git repo                                                                                                           |
-| Meal catalog      | `src/data/seedMeals.ts`: 40 dinners, tagged (base / protein / style / diet / vibe / cuisine)                                                                                                  |
-| Plan generator    | `src/lib/plan/`: deterministic, 4 rule strengths, records what it relaxed. **12 tests**                                                                                                       |
-| DB layer          | `src/lib/db/`: document types, cached Mongo client, typed collections, `ensureIndexes()`                                                                                                      |
-| Codes             | `src/lib/auth/codes.ts`: OTP + link codes, hashed, expiry/attempt/resend policy. **7 tests**                                                                                                  |
-| Bot onboarding    | `src/lib/bot/onboarding.ts`: pure state machine, name → email → OTP → diet → halal → restrictions → day rule → delivery → fallback. **14 tests**                                              |
-| WhatsApp client   | `src/lib/whatsapp/`: `WhatsAppClient` interface, Cloud API implementation, fake, payload builder (button/list/template limits), Meta error map. **11 tests**                                  |
-| Webhook plumbing  | signature check (`X-Hub-Signature-256`), subscription handshake, payload parsing for text / button / list / template replies and delivery statuses. **10 tests**                              |
-| Bot handler       | `src/lib/bot/handler.ts`: dedupe, resume onboarding, portal link codes, email-OTP verification, "welcome back" merge onto an existing account. **13 tests**, run against in-memory fakes      |
-| Stores & senders  | `BotStore` port with `MemoryBotStore` (tests) and `MongoBotStore` (real), `EmailSender` with a fake and Gmail SMTP                                                                            |
-| Webhook route     | `src/app/api/whatsapp/webhook/route.ts`: GET verify, POST signed + deduped, per-event error isolation                                                                                         |
-| Commands          | `plan`, `today`, `tomorrow`, `swap` (day list → suggestion → ✅/🔄), `settings`, `login`, `stop`/`resume`, `delete` + confirm, help. **17 tests**                                             |
-| Delivery          | `src/lib/delivery/`: cheapest-first channel choice (free window → email → opt-in paid template), admin cap + kill switch, delivery log, pending plans delivered on next message. **21 tests** |
-| Portal auth       | passwordless email-code login, session cookie (hashed token, TTL index), WhatsApp one-time login links, sign-up on first verified code                                                        |
-| Portal pages      | dashboard (week, swap, regenerate, WhatsApp connect + free-window state), preferences (delivery, region, rule builder), meals (hide/add with tags), admin (spend, cap, kill switch)           |
-| Schedule + cron   | hourly `runTick` matching each user's own timezone, weekly + daily + next-day paid fallback, `POST /api/cron/tick` behind a shared secret, `.github/workflows/deliver.yml`                    |
-| Week + formatting | `src/lib/plan/week.ts` (per-user timezone, week start), `format.ts` (WhatsApp text, swap rows, template variables). **9 tests**                                                               |
+| Area              | State                                                                                                                                                                                                                                                                                            |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Design doc        | Complete: flows, rules, delivery settings, templates, costs, rollout                                                                                                                                                                                                                             |
+| Scaffold          | Next.js 16 + TS + Tailwind + ESLint, `basePath: /projects/whatsfordinner`, git repo                                                                                                                                                                                                              |
+| Meal catalog      | `src/data/seedMeals.ts`: 40 dinners, tagged (base / protein / style / diet / vibe / cuisine)                                                                                                                                                                                                     |
+| Plan generator    | `src/lib/plan/`: deterministic, 4 rule strengths, records what it relaxed. **12 tests**                                                                                                                                                                                                          |
+| DB layer          | `src/lib/db/`: document types, cached Mongo client, typed collections, `ensureIndexes()`                                                                                                                                                                                                         |
+| Codes             | `src/lib/auth/codes.ts`: OTP + link codes, hashed, expiry/attempt/resend policy. **7 tests**                                                                                                                                                                                                     |
+| Bot onboarding    | `src/lib/bot/onboarding.ts`: pure state machine, name → email → OTP → diet → halal → restrictions → day rule → delivery → fallback. **14 tests**                                                                                                                                                 |
+| WhatsApp client   | `src/lib/whatsapp/`: `WhatsAppClient` interface, Cloud API implementation, fake, payload builder (button/list/template limits), Meta error map. **11 tests**                                                                                                                                     |
+| Webhook plumbing  | signature check (`X-Hub-Signature-256`), subscription handshake, payload parsing for text / button / list / template replies and delivery statuses. **10 tests**                                                                                                                                 |
+| Bot handler       | `src/lib/bot/handler.ts`: dedupe, stale backlog drop, per-phone rate limit (`rate-limit.ts`), race-safe onboarding saves, `r` to restart, resume onboarding, portal link codes, email-OTP verification, "welcome back" merge onto an existing account. **13 tests**, run against in-memory fakes |
+| Stores & senders  | `BotStore` port with `MemoryBotStore` (tests) and `MongoBotStore` (real), `EmailSender` with a fake and Gmail SMTP                                                                                                                                                                               |
+| Webhook route     | `src/app/api/whatsapp/webhook/route.ts`: GET verify, POST signed + deduped, per-event error isolation                                                                                                                                                                                            |
+| Commands          | `plan`, `today`, `tomorrow`, `swap` (day list → suggestion → ✅/🔄), `settings`, `login`, `stop`/`resume`, `delete` + confirm, help. **17 tests**                                                                                                                                                |
+| Delivery          | `src/lib/delivery/`: cheapest-first channel choice (free window → email → opt-in paid template), admin cap + kill switch, delivery log, pending plans delivered on next message. **21 tests**                                                                                                    |
+| Portal auth       | passwordless email-code login, session cookie (hashed token, TTL index), WhatsApp one-time login links, sign-up on first verified code                                                                                                                                                           |
+| Portal pages      | dashboard (week, swap, regenerate, WhatsApp connect + free-window state), preferences (delivery, region, rule builder), meals (hide/add with tags), admin (spend, cap, kill switch)                                                                                                              |
+| Schedule + cron   | hourly `runTick` matching each user's own timezone, weekly + daily + next-day paid fallback, `POST /api/cron/tick` behind a shared secret, `.github/workflows/deliver.yml`                                                                                                                       |
+| Week + formatting | `src/lib/plan/week.ts` (per-user timezone, week start), `format.ts` (WhatsApp text, swap rows, template variables). **9 tests**                                                                                                                                                                  |
 
 | Portal logic | `src/lib/portal/forms.ts` (delivery, rules and timezone parsed from untrusted form data). **12 tests** |
 | Integration tests | real MongoDB through `mongodb-memory-server`: indexes, `MongoBotStore`, sessions, portal login, meal catalog, and a full WhatsApp sign-up end to end. **58 tests** |
@@ -112,10 +112,18 @@ Two bugs the integration tests found, both fixed here:
 - **Join codes for recipients** are recognised by the same link-code path but have no flow yet.
 - **Cron double-runs.** Overlapping runs now queue behind a `concurrency` group, but a manual
   `workflow_dispatch` later in the same hour could still send twice; a `lastRunAt` guard would fix it.
+- **A message that loses an onboarding race gets no reply.** Two deliveries for one user at once
+  answer only the first; the second is dropped rather than queued.
+- **No global signup cap.** The rate limit is per phone, so many numbers each saying hi still get a
+  welcome each. Those are free replies inside the window, so it costs nothing yet.
 - **Delivery of bot replies is fire and forget** beyond the send call: a refused send now throws
   and is reported, but there is no retry.
 
 ## Lessons that cost time
+
+- When a banned number is **reactivated, Meta delivers the whole backlog at once**, one webhook
+  per message, in parallel. Seven queued "hi"s raced through onboarding: one became the name, the
+  rest were refused as emails. Hence the stale-message drop and the `rev` check.
 
 - A **banned number accepts sends** and returns a message id, then delivers nothing. Check
   `status` on the phone number first, which is what `pnpm doctor` does.
