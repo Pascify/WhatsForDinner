@@ -1,0 +1,71 @@
+name: Deploy
+
+# Deploys with a Vercel token instead of the Vercel GitHub app, which can only link one GitHub
+# login to one Vercel account. Project env vars still live in Vercel; `vercel pull` fetches them.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# Never cancel a production deploy halfway; a newer preview does replace an older one.
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+  VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+  VERCEL_CLI: vercel@60
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  deploy:
+    name: ${{ github.ref == 'refs/heads/main' && 'Production' || 'Preview' }}
+    # Fork PRs get no secrets, so there is nothing to deploy with.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    # The environment URL puts a "View deployment" button on the pull request.
+    environment:
+      name: ${{ github.ref == 'refs/heads/main' && 'Production' || 'Preview' }}
+      url: ${{ steps.deploy.outputs.url }}
+    steps:
+      - name: Check the secrets are set
+        run: |
+          missing=0
+          for name in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Repository secret $name is not set. See docs/DEPLOY.md, step 5."
+              missing=1
+            fi
+          done
+          exit $missing
+
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Pull the project settings and env vars
+        run: >
+          pnpm dlx $VERCEL_CLI pull --yes --token "$VERCEL_TOKEN"
+          --environment ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
+
+      - name: Build
+        run: >
+          pnpm dlx $VERCEL_CLI build --token "$VERCEL_TOKEN"
+          ${{ github.ref == 'refs/heads/main' && '--prod' || '' }}
+
+      - name: Deploy
+        id: deploy
+        run: |
+          url=$(pnpm dlx $VERCEL_CLI deploy --prebuilt --token "$VERCEL_TOKEN" \
+            ${{ github.ref == 'refs/heads/main' && '--prod' || '' }})
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "Deployed to $url" >> "$GITHUB_STEP_SUMMARY"
