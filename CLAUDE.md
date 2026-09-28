@@ -82,6 +82,10 @@ Workflows, all free on this public repo:
   setup script, and on demand. Runs `pnpm setup-db` against production with the `MONGODB_URI`
   repository secret. Index creation is idempotent, so re-running is safe.
 - **Deliver plans** (`deliver.yml`) hourly, the cron that sends plans.
+- **Deploy** (`deploy.yml`) to Vercel with `VERCEL_TOKEN`, `VERCEL_ORG_ID` (the Pascify team
+  ID, `team_...`) and `VERCEL_PROJECT_ID` (`prj_...`): production on a push to main, a preview on
+  every same-repo PR. **Keep the Vercel GitHub app disconnected from this project.** It links one
+  GitHub login to one Vercel account, and that login belongs to the harlyy Vercel account.
 
 `pnpm check:rules` enforces the conventions a linter cannot see: no em dashes, every
 `process.env` variable documented in `.env.example`, every server action checking its own
