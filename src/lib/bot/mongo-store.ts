@@ -18,6 +18,7 @@ import {
   meals as mealsCollection,
   otpCodes,
   processedMessages,
+  rateCounters,
   users,
 } from "@/lib/db/collections";
 import {
@@ -44,6 +45,7 @@ function toBotUser(doc: UserDoc): BotUser {
     onboarding: {
       step: doc.onboarding.step,
       draft: (doc.onboarding.draft as OnboardingDraft | undefined) ?? emptyDraft(),
+      rev: doc.onboarding.rev ?? 0,
     },
     rules: doc.rules,
     delivery: doc.delivery,
@@ -85,18 +87,22 @@ export class MongoBotStore implements BotStore {
   }
 
   async saveOnboarding(userId: string, onboarding: BotUser["onboarding"]) {
-    await (
+    const rev = onboarding.rev ?? 0;
+    const result = await (
       await users()
     ).updateOne(
-      { _id: new ObjectId(userId) },
+      // Accounts saved before `rev` existed have no field, which counts as 0.
+      { _id: new ObjectId(userId), "onboarding.rev": rev === 0 ? { $in: [null, 0] } : rev },
       {
         $set: {
           "onboarding.step": onboarding.step,
           "onboarding.draft": onboarding.draft,
+          "onboarding.rev": rev + 1,
           updatedAt: new Date(),
         },
       },
     );
+    return result.modifiedCount === 1;
   }
 
   async finishOnboarding(userId: string, draft: OnboardingDraft) {
@@ -366,6 +372,17 @@ export class MongoBotStore implements BotStore {
     if (reset.modifiedCount === 0) {
       await collection.updateOne({ _id: "admin" }, { $inc: { paidSentThisMonth: 1 } });
     }
+  }
+
+  async bumpCounter(key: string, expiresAt: Date) {
+    const doc = await (
+      await rateCounters()
+    ).findOneAndUpdate(
+      { _id: key },
+      { $inc: { count: 1 }, $setOnInsert: { expiresAt } },
+      { upsert: true, returnDocument: "after" },
+    );
+    return doc?.count ?? 1;
   }
 
   async seenMessage(messageId: string) {

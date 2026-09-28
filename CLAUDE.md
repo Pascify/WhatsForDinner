@@ -122,6 +122,9 @@ these conventions gets broken.
 - Error codes worth knowing: 131030 recipient not on the test allow list, 131047 window closed,
   132001 template missing or unapproved, 190 bad token. `src/lib/whatsapp/errors.ts` maps them.
 - Meta retries webhook deliveries, so every inbound message is checked against `seenMessage`.
+- A reactivated number gets its whole backlog delivered at once, one parallel webhook per
+  message. The handler drops anything older than `STALE_AFTER_MS` and onboarding saves are
+  guarded by `onboarding.rev`, otherwise the messages race through the steps.
 - The test number only reaches 5 numbers added by hand in the Meta dashboard.
 - **A banned or unregistered number still accepts sends** and returns a message id, then
   delivers nothing, and inbound messages to it stay on one tick. Check `status` on the phone
@@ -147,8 +150,9 @@ writing framework code. Do that, the APIs have moved.
 half-finished sign-up), `meals` (per-user additions and hidden overrides on top of the seeded
 catalog), `mealPlans` (unique on user + weekOf, `status` pending or delivered), `mealHistory`
 (drives repeat avoidance), `deliveries` (free vs paid audit trail), `sessions`, `otpCodes`,
-`linkCodes`, `processedMessages` and `adminSettings`. The last four expire through TTL indexes,
-which is what keeps the free 512 MB from filling with one-time codes.
+`linkCodes`, `processedMessages`, `rateCounters` and `adminSettings`. Sessions, codes, webhook
+receipts and rate counters expire through TTL indexes, which is what keeps the free 512 MB from
+filling with one-time codes.
 
 Accounts are never deleted automatically. An incomplete sign-up is `inactive` with a reason.
 

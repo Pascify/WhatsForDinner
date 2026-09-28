@@ -9,6 +9,7 @@ import type {
   MealPlanDoc,
   OtpDoc,
   ProcessedMessageDoc,
+  RateCounterDoc,
   RecipientDoc,
   SessionDoc,
   UserDoc,
@@ -28,6 +29,7 @@ export const deliveries = () => collection<DeliveryDoc>("deliveries");
 export const otpCodes = () => collection<OtpDoc>("otpCodes");
 export const linkCodes = () => collection<LinkCodeDoc>("linkCodes");
 export const processedMessages = () => collection<ProcessedMessageDoc>("processedMessages");
+export const rateCounters = () => collection<RateCounterDoc>("rateCounters");
 export const adminSettings = () => collection<AdminSettingsDoc>("adminSettings");
 export const sessions = () => collection<SessionDoc>("sessions");
 
@@ -47,6 +49,7 @@ export async function ensureIndexes(): Promise<void> {
     linkCol,
     processedCol,
     sessionsCol,
+    rateCol,
   ] = await Promise.all([
     users(),
     recipients(),
@@ -58,6 +61,7 @@ export async function ensureIndexes(): Promise<void> {
     linkCodes(),
     processedMessages(),
     sessions(),
+    rateCounters(),
   ]);
 
   await Promise.all([
@@ -92,5 +96,7 @@ export async function ensureIndexes(): Promise<void> {
 
     sessionsCol.createIndex({ tokenHash: 1 }, { unique: true }),
     sessionsCol.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
+
+    rateCol.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
   ]);
 }

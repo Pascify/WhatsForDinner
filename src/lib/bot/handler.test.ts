@@ -11,6 +11,7 @@ beforeAll(() => {
 });
 
 const PHONE = "923001234567";
+const NOW = new Date("2026-09-26T12:00:00Z");
 let store: MemoryBotStore;
 let whatsapp: FakeWhatsAppClient;
 let email: FakeEmailSender;
@@ -21,7 +22,7 @@ beforeEach(() => {
   store = new MemoryBotStore();
   whatsapp = new FakeWhatsAppClient();
   email = new FakeEmailSender();
-  deps = { store, whatsapp, email };
+  deps = { store, whatsapp, email, now: () => NOW };
   counter = 0;
 });
 
@@ -29,7 +30,7 @@ const incoming = (text: string, replyId?: string): InboundEvent => ({
   type: "message",
   messageId: `wamid.${++counter}`,
   from: PHONE,
-  at: new Date("2026-09-26T12:00:00Z"),
+  at: NOW,
   text,
   replyId,
 });
@@ -101,6 +102,52 @@ describe("handleInbound", () => {
 
     await say(email.lastCode()!);
     expect(lastText()).toMatch(/Do you eat meat/);
+  });
+
+  it("ignores a backlog Meta replays long after it was sent", async () => {
+    await handleInbound({ ...incoming("Hi"), at: new Date(NOW.getTime() - 60 * 60_000) }, deps);
+
+    expect(whatsapp.sent).toHaveLength(0);
+    expect(store.users.size).toBe(0);
+  });
+
+  it("answers only one of several messages handled in parallel", async () => {
+    await say("Hi");
+    await Promise.all([say("hi"), say("hi"), say("hi")]);
+
+    expect(whatsapp.texts().filter((text) => /What's your email/.test(text))).toHaveLength(1);
+    expect((await store.findUserByPhone(PHONE))!.onboarding).toMatchObject({
+      step: "ask_email",
+      draft: { name: "hi" },
+    });
+  });
+
+  it("creates one account when a new number's first messages arrive in parallel", async () => {
+    await Promise.all([say("Hi"), say("Hi")]);
+
+    expect(store.users.size).toBe(1);
+    expect(whatsapp.texts().filter((text) => /Welcome/.test(text))).toHaveLength(1);
+  });
+
+  it("starts onboarding over when the user types r", async () => {
+    await say("Hi");
+    await say("hi");
+    await say("r");
+
+    expect(lastText()).toMatch(/Starting over/);
+    await say("Hammad");
+    expect((await store.findUserByPhone(PHONE))!.onboarding).toMatchObject({
+      step: "ask_email",
+      draft: { name: "Hammad" },
+    });
+  });
+
+  it("warns once when a number floods the bot, then goes quiet", async () => {
+    for (let i = 0; i < 20; i++) await say("plan");
+
+    // 15 replies are allowed per minute, the 16th gets the warning, the rest nothing.
+    expect(whatsapp.sent).toHaveLength(16);
+    expect(lastText()).toMatch(/a lot of messages/);
   });
 
   it("records when the user last messaged, which is what keeps sending free", async () => {

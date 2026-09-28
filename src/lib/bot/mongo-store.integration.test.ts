@@ -1,7 +1,7 @@
 import { ObjectId } from "mongodb";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { clearCollections, startMongo } from "@/test/mongo";
-import { adminSettings, ensureIndexes, meals, users } from "@/lib/db/collections";
+import { adminSettings, ensureIndexes, meals, rateCounters, users } from "@/lib/db/collections";
 import { generatePlan } from "@/lib/plan/generate";
 import { SEED_MEALS } from "@/data/seedMeals";
 import { MongoBotStore } from "./mongo-store";
@@ -119,6 +119,36 @@ describe("MongoBotStore", () => {
         purpose: "portal_login",
       });
       expect(await store.consumeLinkCode(code)).toBeUndefined();
+    });
+  });
+
+  it("refuses an onboarding save made from a stale read", async () => {
+    const created = await store.createUser({ phone: PHONE, channel: "whatsapp" });
+    // An account from before `rev` existed has no field at all.
+    await (await users()).updateOne({ phone: PHONE }, { $unset: { "onboarding.rev": "" } });
+    const draft = { ...emptyDraft(), name: "hi" };
+
+    expect(await store.saveOnboarding(created.id, { step: "ask_email", draft, rev: 0 })).toBe(true);
+    expect(await store.saveOnboarding(created.id, { step: "ask_email", draft, rev: 0 })).toBe(
+      false,
+    );
+
+    const reloaded = (await store.findUserByPhone(PHONE))!;
+    expect(reloaded.onboarding.rev).toBe(1);
+    expect(
+      await store.saveOnboarding(created.id, { ...reloaded.onboarding, step: "verify_email" }),
+    ).toBe(true);
+  });
+
+  it("counts per key and expires the counter with its window", async () => {
+    const expiresAt = new Date("2026-09-26T12:35:00Z");
+
+    expect(await store.bumpCounter("923001234567:minute:1", expiresAt)).toBe(1);
+    expect(await store.bumpCounter("923001234567:minute:1", expiresAt)).toBe(2);
+    expect(await store.bumpCounter("923001234567:minute:2", expiresAt)).toBe(1);
+    expect(await (await rateCounters()).findOne({ _id: "923001234567:minute:1" })).toMatchObject({
+      count: 2,
+      expiresAt,
     });
   });
 
